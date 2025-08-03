@@ -13,9 +13,9 @@ namespace KC_135
     {
         private List<Triangle> triangles = new List<Triangle>();
         private Triangle draggedTriangle;
-        private Triangle selectedTriangle;
+        // private Triangle selectedTriangle;
         private bool isDragging;
-        private bool isRotating;
+        // private bool isRotating;
         private PointF lastMousePosition;
         private PointF dragOffset;
         private Dictionary<Triangle, TextBox> consoleTextBoxes = new Dictionary<Triangle, TextBox>();
@@ -252,18 +252,18 @@ namespace KC_135
                 g.FillPolygon(brush, points);
             }
             
-            using (Pen pen = new Pen(triangle.IsSelected ? Color.Red : Color.Black, triangle.IsSelected ? 3 : 1))
+            using (Pen pen = new Pen(Color.Black, 1))
             {
                 g.DrawPolygon(pen, points);
             }
             
-            if (triangle.IsSelected)
-            {
-                using (Brush centerBrush = new SolidBrush(Color.Red))
-                {
-                    g.FillEllipse(centerBrush, triangle.Location.X - 3, triangle.Location.Y - 3, 6, 6);
-                }
-            }
+            // if (triangle.IsSelected)
+            // {
+            //     using (Brush centerBrush = new SolidBrush(Color.Red))
+            //     {
+            //         g.FillEllipse(centerBrush, triangle.Location.X - 3, triangle.Location.Y - 3, 6, 6);
+            //     }
+            // }
         }
 
         private void panel1_MouseDown(object sender, MouseEventArgs e)
@@ -288,19 +288,19 @@ namespace KC_135
                 
                 if (clickedTriangle != null)
                 {
-                    if (checkBoxSelection.Checked)
-                    {
-                        if (selectedTriangle != null)
-                            selectedTriangle.IsSelected = false;
-                        
-                        selectedTriangle = clickedTriangle;
-                        selectedTriangle.IsSelected = true;
-                        
-                        triangles.Remove(clickedTriangle);
-                        triangles.Add(clickedTriangle);
-                    }
-                    else
-                    {
+                    // if (checkBoxSelection.Checked)
+                    // {
+                    //     if (selectedTriangle != null)
+                    //         selectedTriangle.IsSelected = false;
+                    //     
+                    //     selectedTriangle = clickedTriangle;
+                    //     selectedTriangle.IsSelected = true;
+                    //     
+                    //     triangles.Remove(clickedTriangle);
+                    //     triangles.Add(clickedTriangle);
+                    // }
+                    // else
+                    // {
                         if (clickedTriangle.IsConsoleVisible)
                         {
                             HideConsole(clickedTriangle);
@@ -320,24 +320,24 @@ namespace KC_135
                         
                         triangles.Remove(clickedTriangle);
                         triangles.Add(clickedTriangle);
-                    }
+                    // }
                 }
-                else if (checkBoxSelection.Checked)
-                {
-                    if (selectedTriangle != null)
-                    {
-                        selectedTriangle.IsSelected = false;
-                        selectedTriangle = null;
-                    }
-                }
+                // else if (checkBoxSelection.Checked)
+                // {
+                //     if (selectedTriangle != null)
+                //     {
+                //         selectedTriangle.IsSelected = false;
+                //         selectedTriangle = null;
+                //     }
+                // }
                 
                 panel1.Invalidate();
             }
-            else if (e.Button == MouseButtons.Right && selectedTriangle != null && checkBoxSelection.Checked)
-            {
-                isRotating = true;
-                lastMousePosition = mousePoint;
-            }
+            // else if (e.Button == MouseButtons.Right && selectedTriangle != null && checkBoxSelection.Checked)
+            // {
+            //     isRotating = true;
+            //     lastMousePosition = mousePoint;
+            // }
         }
 
         private void panel1_MouseMove(object sender, MouseEventArgs e)
@@ -357,16 +357,16 @@ namespace KC_135
                 UpdateConsolePosition(draggedTriangle);
                 panel1.Invalidate();
             }
-            else if (isRotating && selectedTriangle != null)
-            {
-                float deltaX = mousePoint.X - selectedTriangle.Location.X;
-                float deltaY = mousePoint.Y - selectedTriangle.Location.Y;
-                float angle = (float)(Math.Atan2(deltaY, deltaX) * 180.0 / Math.PI);
-                
-                selectedTriangle.Rotation = angle + 90;
-                
-                panel1.Invalidate();
-            }
+            // else if (isRotating && selectedTriangle != null)
+            // {
+            //     float deltaX = mousePoint.X - selectedTriangle.Location.X;
+            //     float deltaY = mousePoint.Y - selectedTriangle.Location.Y;
+            //     float angle = (float)(Math.Atan2(deltaY, deltaX) * 180.0 / Math.PI);
+            //     
+            //     selectedTriangle.Rotation = angle + 90;
+            //     
+            //     panel1.Invalidate();
+            // }
         }
 
         private void panel1_MouseUp(object sender, MouseEventArgs e)
@@ -380,25 +380,25 @@ namespace KC_135
                 draggedTriangle = null;
             }
             
-            if (isRotating)
-            {
-                isRotating = false;
-            }
+            // if (isRotating)
+            // {
+            //     isRotating = false;
+            // }
         }
 
-        private void checkBoxSelection_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!checkBoxSelection.Checked)
-            {
-                if (selectedTriangle != null)
-                {
-                    selectedTriangle.IsSelected = false;
-                    selectedTriangle = null;
-                }
-                isRotating = false;
-                panel1.Invalidate();
-            }
-        }
+        // private void checkBoxSelection_CheckedChanged(object sender, EventArgs e)
+        // {
+        //     if (!checkBoxSelection.Checked)
+        //     {
+        //         if (selectedTriangle != null)
+        //         {
+        //             selectedTriangle.IsSelected = false;
+        //             selectedTriangle = null;
+        //         }
+        //         isRotating = false;
+        //         panel1.Invalidate();
+        //     }
+        // }
         
         private void CleanupResources()
         {

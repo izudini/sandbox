@@ -4,7 +4,7 @@ namespace KC_135
     {
         private System.ComponentModel.IContainer components = null;
         private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.CheckBox checkBoxSelection;
+        // private System.Windows.Forms.CheckBox checkBoxSelection;
 
         protected override void Dispose(bool disposing)
         {
@@ -19,7 +19,7 @@ namespace KC_135
         private void InitializeComponent()
         {
             this.panel1 = new System.Windows.Forms.Panel();
-            this.checkBoxSelection = new System.Windows.Forms.CheckBox();
+            // this.checkBoxSelection = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // panel1
@@ -35,21 +35,21 @@ namespace KC_135
             // 
             // checkBoxSelection
             // 
-            this.checkBoxSelection.AutoSize = true;
-            this.checkBoxSelection.Location = new System.Drawing.Point(12, 12);
-            this.checkBoxSelection.Name = "checkBoxSelection";
-            this.checkBoxSelection.Size = new System.Drawing.Size(140, 19);
-            this.checkBoxSelection.TabIndex = 1;
-            this.checkBoxSelection.Text = "Enable Triangle Selection";
-            this.checkBoxSelection.UseVisualStyleBackColor = true;
-            this.checkBoxSelection.CheckedChanged += new System.EventHandler(this.checkBoxSelection_CheckedChanged);
+            // this.checkBoxSelection.AutoSize = true;
+            // this.checkBoxSelection.Location = new System.Drawing.Point(12, 12);
+            // this.checkBoxSelection.Name = "checkBoxSelection";
+            // this.checkBoxSelection.Size = new System.Drawing.Size(140, 19);
+            // this.checkBoxSelection.TabIndex = 1;
+            // this.checkBoxSelection.Text = "Enable Triangle Selection";
+            // this.checkBoxSelection.UseVisualStyleBackColor = true;
+            // this.checkBoxSelection.CheckedChanged += new System.EventHandler(this.checkBoxSelection_CheckedChanged);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.checkBoxSelection);
+            // this.Controls.Add(this.checkBoxSelection);
             this.Controls.Add(this.panel1);
             this.Name = "Form1";
             this.Text = "Form1";
