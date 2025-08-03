@@ -203,6 +203,25 @@ namespace KC_135
                 Top = (int)(triangle.Location.Y - triangle.Height * 2/3)
             };
             
+            // Create context menu for console
+            ContextMenuStrip contextMenu = new ContextMenuStrip();
+            
+            ToolStripMenuItem clearItem = new ToolStripMenuItem("Clear");
+            clearItem.Click += (sender, e) => consoleTextBox.Clear();
+            
+            ToolStripMenuItem copyItem = new ToolStripMenuItem("Copy");
+            copyItem.Click += (sender, e) => 
+            {
+                if (!string.IsNullOrEmpty(consoleTextBox.Text))
+                {
+                    Clipboard.SetText(consoleTextBox.Text);
+                }
+            };
+            
+            contextMenu.Items.Add(clearItem);
+            contextMenu.Items.Add(copyItem);
+            consoleTextBox.ContextMenuStrip = contextMenu;
+            
             panel1.Controls.Add(consoleTextBox);
             consoleTextBoxes[triangle] = consoleTextBox;
             triangle.IsConsoleVisible = true;
