@@ -11,14 +11,21 @@ namespace KC_135
 {
     public partial class Form1 : Form
     {
+        //OFF
+        //Init
+        //Standby
+        //Operate
+
+
         private List<Triangle> triangles = new List<Triangle>();
-        private Triangle draggedTriangle;
+        // private Triangle draggedTriangle;
         // private Triangle selectedTriangle;
-        private bool isDragging;
+        // private bool isDragging;
         // private bool isRotating;
-        private PointF lastMousePosition;
-        private PointF dragOffset;
+        // private PointF lastMousePosition;
+        // private PointF dragOffset;
         private Dictionary<Triangle, TextBox> consoleTextBoxes = new Dictionary<Triangle, TextBox>();
+        private Dictionary<Triangle, Label> triangleLabels = new Dictionary<Triangle, Label>();
         private System.Windows.Forms.Timer messageUpdateTimer;
 
         public Form1()
@@ -70,6 +77,31 @@ namespace KC_135
                 new Triangle(new PointF(400, 200), 60, 40, 45, Color.Purple),
                 new Triangle(new PointF(500, 100), 100, 80, 180, Color.Orange)
             };
+            
+            // Create labels for each triangle
+            foreach (Triangle triangle in triangles)
+            {
+                Label operateLabel = new Label
+                {
+                    Text = "Operate",
+                    ForeColor = Color.White,
+                    BackColor = Color.Transparent,
+                    Font = new Font("Arial", 8, FontStyle.Bold),
+                    AutoSize = true,
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+                
+                // Position the label at the triangle's center
+                var labelSize = TextRenderer.MeasureText(operateLabel.Text, operateLabel.Font);
+                operateLabel.Left = (int)(triangle.Location.X - labelSize.Width / 2);
+                operateLabel.Top = (int)(triangle.Location.Y - labelSize.Height / 2);
+                
+                panel1.Controls.Add(operateLabel);
+                triangleLabels[triangle] = operateLabel;
+                
+                // Bring label to front so it appears above the triangle
+                operateLabel.BringToFront();
+            }
         }
         
         private void InitializeBackgroundImage()
@@ -239,15 +271,15 @@ namespace KC_135
             triangle.IsConsoleVisible = false;
         }
         
-        private void UpdateConsolePosition(Triangle triangle)
-        {
-            if (consoleTextBoxes.ContainsKey(triangle))
-            {
-                TextBox textBox = consoleTextBoxes[triangle];
-                textBox.Left = (int)(triangle.Location.X + triangle.Base/2 + 5);
-                textBox.Top = (int)(triangle.Location.Y - triangle.Height * 2/3);
-            }
-        }
+        // private void UpdateConsolePosition(Triangle triangle)
+        // {
+        //     if (consoleTextBoxes.ContainsKey(triangle))
+        //     {
+        //         TextBox textBox = consoleTextBoxes[triangle];
+        //         textBox.Left = (int)(triangle.Location.X + triangle.Base/2 + 5);
+        //         textBox.Top = (int)(triangle.Location.Y - triangle.Height * 2/3);
+        //     }
+        // }
 
         private void panel1_Paint(object sender, PaintEventArgs e)
         {
@@ -329,13 +361,13 @@ namespace KC_135
                             ShowConsole(clickedTriangle);
                         }
                         
-                        draggedTriangle = clickedTriangle;
-                        isDragging = true;
-                        lastMousePosition = mousePoint;
-                        dragOffset = new PointF(
-                            mousePoint.X - draggedTriangle.Location.X,
-                            mousePoint.Y - draggedTriangle.Location.Y
-                        );
+                        // draggedTriangle = clickedTriangle;
+                        // isDragging = true;
+                        // lastMousePosition = mousePoint;
+                        // dragOffset = new PointF(
+                        //     mousePoint.X - draggedTriangle.Location.X,
+                        //     mousePoint.Y - draggedTriangle.Location.Y
+                        // );
                         
                         triangles.Remove(clickedTriangle);
                         triangles.Add(clickedTriangle);
@@ -366,16 +398,16 @@ namespace KC_135
                 
             PointF mousePoint = new PointF(e.X, e.Y);
             
-            if (isDragging && draggedTriangle != null)
-            {
-                draggedTriangle.Location = new PointF(
-                    mousePoint.X - dragOffset.X,
-                    mousePoint.Y - dragOffset.Y
-                );
-                
-                UpdateConsolePosition(draggedTriangle);
-                panel1.Invalidate();
-            }
+            // if (isDragging && draggedTriangle != null)
+            // {
+            //     draggedTriangle.Location = new PointF(
+            //         mousePoint.X - dragOffset.X,
+            //         mousePoint.Y - dragOffset.Y
+            //     );
+            //     
+            //     UpdateConsolePosition(draggedTriangle);
+            //     panel1.Invalidate();
+            // }
             // else if (isRotating && selectedTriangle != null)
             // {
             //     float deltaX = mousePoint.X - selectedTriangle.Location.X;
@@ -393,11 +425,11 @@ namespace KC_135
             if (DesignMode)
                 return;
                 
-            if (isDragging)
-            {
-                isDragging = false;
-                draggedTriangle = null;
-            }
+            // if (isDragging)
+            // {
+            //     isDragging = false;
+            //     draggedTriangle = null;
+            // }
             
             // if (isRotating)
             // {
@@ -435,6 +467,15 @@ namespace KC_135
                     textBox.Dispose();
                 }
                 consoleTextBoxes.Clear();
+            }
+            
+            if (triangleLabels != null)
+            {
+                foreach (var label in triangleLabels.Values)
+                {
+                    label.Dispose();
+                }
+                triangleLabels.Clear();
             }
         }
     }
