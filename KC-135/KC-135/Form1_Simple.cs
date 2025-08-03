@@ -11,33 +11,38 @@ namespace KC_135
 {
     public partial class Form1 : Form
     {
-        private List<Triangle> triangles = new List<Triangle>();
+        private List<Triangle> triangles;
         private Triangle draggedTriangle;
         private Triangle selectedTriangle;
         private bool isDragging;
         private bool isRotating;
         private PointF lastMousePosition;
         private PointF dragOffset;
-        private Dictionary<Triangle, TextBox> consoleTextBoxes = new Dictionary<Triangle, TextBox>();
-        private System.Windows.Forms.Timer messageUpdateTimer;
+        private Dictionary<Triangle, TextBox> consoleTextBoxes;
+        private Timer messageUpdateTimer;
 
         public Form1()
         {
             InitializeComponent();
-            InitializeForm();
+            if (!DesignMode)
+            {
+                InitializeForm();
+            }
         }
-        
+
         private void InitializeForm()
         {
-            if (DesignMode)
-                return;
-                
             SetStyle(ControlStyles.AllPaintingInWmPaint | 
                      ControlStyles.UserPaint | 
                      ControlStyles.DoubleBuffer | 
                      ControlStyles.ResizeRedraw, true);
             
-            InitializeTimer();
+            consoleTextBoxes = new Dictionary<Triangle, TextBox>();
+            
+            messageUpdateTimer = new Timer();
+            messageUpdateTimer.Interval = 100;
+            messageUpdateTimer.Tick += MessageUpdateTimer_Tick;
+            messageUpdateTimer.Start();
             
             try
             {
@@ -45,23 +50,13 @@ namespace KC_135
                     BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
                     null, panel1, new object[] { true });
             }
-            catch
-            {
-                // Ignore reflection errors in designer
-            }
+            catch { }
             
             InitializeTriangles();
             InitializeBackgroundImage();
+            StartMessageGenerator();
         }
-        
-        private void InitializeTimer()
-        {
-            messageUpdateTimer = new System.Windows.Forms.Timer();
-            messageUpdateTimer.Interval = 100;
-            messageUpdateTimer.Tick += MessageUpdateTimer_Tick;
-            messageUpdateTimer.Start();
-        }
-        
+
         private void InitializeTriangles()
         {
             triangles = new List<Triangle>
@@ -71,12 +66,11 @@ namespace KC_135
                 new Triangle(new PointF(500, 100), 100, 80, 180, Color.Orange)
             };
         }
-        
+
         private void InitializeBackgroundImage()
         {
             try
             {
-                // Try loading from embedded resources first
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
                 var resourceName = "KC_135.kc135.png";
                 
@@ -89,7 +83,6 @@ namespace KC_135
                     }
                     else
                     {
-                        // Fallback to file system
                         string imagePath = Path.Combine(Application.StartupPath, "kc135.png");
                         if (!File.Exists(imagePath))
                         {
@@ -105,28 +98,12 @@ namespace KC_135
                             panel1.BackgroundImage = Image.FromFile(imagePath);
                             panel1.BackgroundImageLayout = ImageLayout.Zoom;
                         }
-                        else
-                        {
-                            MessageBox.Show("Background image 'kc135.png' not found in any expected location.");
-                        }
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Could not load background image: {ex.Message}");
-            }
+            catch { }
         }
-        
-        protected override void SetVisibleCore(bool value)
-        {
-            base.SetVisibleCore(value);
-            if (value && !DesignMode && messageUpdateTimer != null && triangles != null)
-            {
-                StartMessageGenerator();
-            }
-        }
-        
+
         private void StartMessageGenerator()
         {
             Thread messageThread = new Thread(() =>
@@ -145,12 +122,15 @@ namespace KC_135
                 
                 while (true)
                 {
-                    foreach (Triangle triangle in triangles)
+                    if (triangles != null)
                     {
-                        if (random.Next(0, 10) < 3)
+                        foreach (Triangle triangle in triangles)
                         {
-                            string message = $"[{DateTime.Now:HH:mm:ss}] {sampleMessages[random.Next(sampleMessages.Length)]}";
-                            triangle.MessageQueue.Enqueue(message);
+                            if (random.Next(0, 10) < 3)
+                            {
+                                string message = $"[{DateTime.Now:HH:mm:ss}] {sampleMessages[random.Next(sampleMessages.Length)]}";
+                                triangle.MessageQueue.Enqueue(message);
+                            }
                         }
                     }
                     Thread.Sleep(2000);
@@ -161,9 +141,11 @@ namespace KC_135
             };
             messageThread.Start();
         }
-        
+
         private void MessageUpdateTimer_Tick(object sender, EventArgs e)
         {
+            if (consoleTextBoxes == null) return;
+            
             foreach (var kvp in consoleTextBoxes)
             {
                 Triangle triangle = kvp.Key;
@@ -183,7 +165,7 @@ namespace KC_135
                 }
             }
         }
-        
+
         private void ShowConsole(Triangle triangle)
         {
             if (consoleTextBoxes.ContainsKey(triangle))
@@ -193,21 +175,21 @@ namespace KC_135
             {
                 Multiline = true,
                 ReadOnly = true,
-                ScrollBars = ScrollBars.None,
+                ScrollBars = ScrollBars.Vertical,
                 BackColor = Color.Black,
                 ForeColor = Color.Lime,
-                Font = new Font("Consolas", 6.4f),
+                Font = new Font("Consolas", 8),
                 Width = 200,
                 Height = 150,
-                Left = (int)(triangle.Location.X + triangle.Base/2 + 5),
-                Top = (int)(triangle.Location.Y - triangle.Height * 2/3)
+                Left = (int)(triangle.Location.X + triangle.Base + 10),
+                Top = (int)(triangle.Location.Y - 75)
             };
             
             panel1.Controls.Add(consoleTextBox);
             consoleTextBoxes[triangle] = consoleTextBox;
             triangle.IsConsoleVisible = true;
         }
-        
+
         private void HideConsole(Triangle triangle)
         {
             if (!consoleTextBoxes.ContainsKey(triangle))
@@ -219,14 +201,14 @@ namespace KC_135
             consoleTextBoxes.Remove(triangle);
             triangle.IsConsoleVisible = false;
         }
-        
+
         private void UpdateConsolePosition(Triangle triangle)
         {
             if (consoleTextBoxes.ContainsKey(triangle))
             {
                 TextBox textBox = consoleTextBoxes[triangle];
-                textBox.Left = (int)(triangle.Location.X + triangle.Base/2 + 5);
-                textBox.Top = (int)(triangle.Location.Y - triangle.Height * 2/3);
+                textBox.Left = (int)(triangle.Location.X + triangle.Base + 10);
+                textBox.Top = (int)(triangle.Location.Y - 75);
             }
         }
 

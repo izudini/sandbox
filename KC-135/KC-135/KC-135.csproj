@@ -5,6 +5,7 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +13,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <EmbeddedResource Include="kc135.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Form1_Backup.cs" />
+    <Compile Remove="Form1_Simple.cs" />
   </ItemGroup>
 
 </Project>

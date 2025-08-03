@@ -10,6 +10,7 @@ namespace KC_135
         {
             if (disposing && (components != null))
             {
+                CleanupResources();
                 components.Dispose();
             }
             base.Dispose(disposing);
