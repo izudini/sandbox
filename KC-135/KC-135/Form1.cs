@@ -50,7 +50,7 @@ namespace KC_135
             {
                 typeof(Panel).InvokeMember("DoubleBuffered",
                     BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
-                    null, panel1, new object[] { true });
+                    null, planePanel, new object[] { true });
             }
             catch
             {
@@ -73,7 +73,7 @@ namespace KC_135
         {
             triangles = new List<Triangle>
             {
-                new Triangle(new PointF(300, 150), 80, 60, 0, Color.Green),
+                new Triangle(new PointF(200, 80), 80, 60, 0, Color.Green),
                 new Triangle(new PointF(400, 200), 60, 40, 45, Color.Purple),
                 new Triangle(new PointF(500, 100), 100, 80, 180, Color.Orange)
             };
@@ -96,7 +96,7 @@ namespace KC_135
                 operateLabel.Left = (int)(triangle.Location.X - labelSize.Width / 2);
                 operateLabel.Top = (int)(triangle.Location.Y - labelSize.Height / 2);
                 
-                panel1.Controls.Add(operateLabel);
+                planePanel.Controls.Add(operateLabel);
                 triangleLabels[triangle] = operateLabel;
                 
                 // Bring label to front so it appears above the triangle
@@ -116,8 +116,8 @@ namespace KC_135
                 {
                     if (stream != null)
                     {
-                        panel1.BackgroundImage = Image.FromStream(stream);
-                        panel1.BackgroundImageLayout = ImageLayout.Zoom;
+                        planePanel.BackgroundImage = Image.FromStream(stream);
+                        planePanel.BackgroundImageLayout = ImageLayout.Zoom;
                     }
                     else
                     {
@@ -134,8 +134,8 @@ namespace KC_135
                         
                         if (File.Exists(imagePath))
                         {
-                            panel1.BackgroundImage = Image.FromFile(imagePath);
-                            panel1.BackgroundImageLayout = ImageLayout.Zoom;
+                            planePanel.BackgroundImage = Image.FromFile(imagePath);
+                            planePanel.BackgroundImageLayout = ImageLayout.Zoom;
                         }
                         else
                         {
@@ -254,7 +254,7 @@ namespace KC_135
             contextMenu.Items.Add(copyItem);
             consoleTextBox.ContextMenuStrip = contextMenu;
             
-            panel1.Controls.Add(consoleTextBox);
+            planePanel.Controls.Add(consoleTextBox);
             consoleTextBoxes[triangle] = consoleTextBox;
             triangle.IsConsoleVisible = true;
         }
@@ -265,7 +265,7 @@ namespace KC_135
                 return;
                 
             TextBox textBox = consoleTextBoxes[triangle];
-            panel1.Controls.Remove(textBox);
+            planePanel.Controls.Remove(textBox);
             textBox.Dispose();
             consoleTextBoxes.Remove(triangle);
             triangle.IsConsoleVisible = false;
@@ -382,7 +382,7 @@ namespace KC_135
                 //     }
                 // }
                 
-                panel1.Invalidate();
+                planePanel.Invalidate();
             }
             // else if (e.Button == MouseButtons.Right && selectedTriangle != null && checkBoxSelection.Checked)
             // {
