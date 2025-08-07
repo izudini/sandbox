@@ -18,12 +18,6 @@ namespace KC_135
 
 
         private List<Triangle> triangles = new List<Triangle>();
-        // private Triangle draggedTriangle;
-        // private Triangle selectedTriangle;
-        // private bool isDragging;
-        // private bool isRotating;
-        // private PointF lastMousePosition;
-        // private PointF dragOffset;
         private Dictionary<Triangle, TextBox> consoleTextBoxes = new Dictionary<Triangle, TextBox>();
         private Dictionary<Triangle, Label> triangleLabels = new Dictionary<Triangle, Label>();
         private System.Windows.Forms.Timer messageUpdateTimer;
@@ -36,8 +30,8 @@ namespace KC_135
         
         private void InitializeForm()
         {
-            if (DesignMode)
-                return;
+            //if (DesignMode)
+                //return;
                 
             SetStyle(ControlStyles.AllPaintingInWmPaint | 
                      ControlStyles.UserPaint | 
@@ -73,8 +67,8 @@ namespace KC_135
         {
             triangles = new List<Triangle>
             {
-                new Triangle(new PointF(200, 80), 80, 60, 0, Color.Green),
-                new Triangle(new PointF(400, 200), 60, 40, 45, Color.Purple),
+                new Triangle(new PointF(200, 80), 80, 60, 45, Color.Green),
+                new Triangle(new PointF(200, 200), 40, 30, 90, Color.Purple),
                 new Triangle(new PointF(500, 100), 100, 80, 180, Color.Orange)
             };
             
@@ -83,7 +77,7 @@ namespace KC_135
             {
                 Label operateLabel = new Label
                 {
-                    Text = "Operate",
+                    Text = $"Operate {triangle.Rotation:F0}°",
                     ForeColor = Color.White,
                     BackColor = Color.Transparent,
                     Font = new Font("Arial", 8, FontStyle.Bold),
@@ -214,6 +208,25 @@ namespace KC_135
                     textBox.ScrollToCaret();
                 }
             }
+            
+            // Update labels for all triangles to ensure angle is current
+            foreach (Triangle triangle in triangles)
+            {
+                UpdateTriangleLabel(triangle);
+            }
+        }
+
+        private void UpdateTriangleLabel(Triangle triangle)
+        {
+            if (triangleLabels.ContainsKey(triangle))
+            {
+                triangleLabels[triangle].Text = $"Operate {triangle.Rotation:F0}°";
+                
+                // Reposition the label to center it properly with the new text
+                var labelSize = TextRenderer.MeasureText(triangleLabels[triangle].Text, triangleLabels[triangle].Font);
+                triangleLabels[triangle].Left = (int)(triangle.Location.X - labelSize.Width / 2);
+                triangleLabels[triangle].Top = (int)(triangle.Location.Y - labelSize.Height / 2);
+            }
         }
         
         private void ShowConsole(Triangle triangle)
@@ -296,16 +309,41 @@ namespace KC_135
 
         private void DrawTriangle(Graphics g, Triangle triangle)
         {
-            PointF[] points = triangle.GetPoints();
+            RectangleF cameraLens = triangle.GetCameraLens();
+            PointF[] fieldOfView = triangle.GetFieldOfView();
             
-            using (Brush brush = new SolidBrush(triangle.Color))
+            // Draw camera lens
+            using (Brush lensBrush = new SolidBrush(Color.DarkGray))
             {
-                g.FillPolygon(brush, points);
+                g.FillEllipse(lensBrush, cameraLens);
             }
             
-            using (Pen pen = new Pen(Color.Black, 1))
+            using (Pen lensPen = new Pen(Color.Black, 1))
             {
-                g.DrawPolygon(pen, points);
+                g.DrawEllipse(lensPen, cameraLens);
+            }
+            
+            using (Brush centerBrush = new SolidBrush(Color.Black))
+            {
+                float centerSize = cameraLens.Width * 0.3f;
+                RectangleF center = new RectangleF(
+                    cameraLens.X + (cameraLens.Width - centerSize) / 2,
+                    cameraLens.Y + (cameraLens.Height - centerSize) / 2,
+                    centerSize,
+                    centerSize
+                );
+                g.FillEllipse(centerBrush, center);
+            }
+            
+            // Draw field of view triangle last (front layer)
+            using (Brush fovBrush = new SolidBrush(Color.FromArgb(50, triangle.Color)))
+            {
+                g.FillPolygon(fovBrush, fieldOfView);
+            }
+            
+            using (Pen fovPen = new Pen(triangle.Color, 1))
+            {
+                g.DrawPolygon(fovPen, fieldOfView);
             }
             
             // if (triangle.IsSelected)

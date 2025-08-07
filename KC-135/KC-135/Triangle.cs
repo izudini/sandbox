@@ -26,50 +26,94 @@ namespace KC_135
             MessageQueue = new ConcurrentQueue<string>();
         }
 
-        public PointF[] GetPoints()
+        public RectangleF GetCameraBody()
         {
-            float halfBase = Base / 2;
-            PointF[] points = new PointF[]
-            {
-                new PointF(0, -Height * 2/3),
-                new PointF(-halfBase, Height * 1/3),
-                new PointF(halfBase, Height * 1/3)
-            };
+            float radius = Math.Min(Base, Height) / 2;
+            
+            return new RectangleF(
+                Location.X - radius,
+                Location.Y - radius,
+                radius * 2,
+                radius * 2
+            );
+        }
 
-            double radians = Rotation * Math.PI / 180.0;
+        public RectangleF GetCameraLens()
+        {
+            float lensRadius = Math.Min(Base, Height) * 0.3f;
+            float offsetDistance = Base * 0.25f;
+            
+            // Subtract 90 degrees to make 0° point up instead of right
+            double radians = (Rotation - 90) * Math.PI / 180.0;
             float cos = (float)Math.Cos(radians);
             float sin = (float)Math.Sin(radians);
+            
+            float lensX = Location.X + (offsetDistance * cos);
+            float lensY = Location.Y + (offsetDistance * sin);
+            
+            return new RectangleF(
+                lensX - lensRadius / 2,
+                lensY - lensRadius / 2,
+                lensRadius,
+                lensRadius
+            );
+        }
 
-            for (int i = 0; i < points.Length; i++)
+        public PointF[] GetFieldOfView()
+        {
+            float fovAngle = 60.0f;
+            float fovDistance = Base * 1.5f;
+            
+            // Subtract 90 degrees to make 0° point up instead of right
+            double leftRadians = (Rotation - 90 - fovAngle / 2) * Math.PI / 180.0;
+            double rightRadians = (Rotation - 90 + fovAngle / 2) * Math.PI / 180.0;
+            
+            PointF[] fovPoints = new PointF[4];
+            
+            // Start from center of circle
+            fovPoints[0] = Location;
+            fovPoints[1] = new PointF(
+                Location.X + (float)(fovDistance * Math.Cos(leftRadians)),
+                Location.Y + (float)(fovDistance * Math.Sin(leftRadians))
+            );
+            fovPoints[2] = new PointF(
+                Location.X + (float)(fovDistance * Math.Cos(rightRadians)),
+                Location.Y + (float)(fovDistance * Math.Sin(rightRadians))
+            );
+            fovPoints[3] = Location;
+            
+            return fovPoints;
+        }
+
+        public PointF[] GetPoints()
+        {
+            RectangleF body = GetCameraBody();
+            return new PointF[]
             {
-                float x = points[i].X;
-                float y = points[i].Y;
-                points[i] = new PointF(
-                    Location.X + (x * cos - y * sin),
-                    Location.Y + (x * sin + y * cos)
-                );
-            }
+                new PointF(body.Left, body.Top),
+                new PointF(body.Right, body.Top),
+                new PointF(body.Right, body.Bottom),
+                new PointF(body.Left, body.Bottom)
+            };
+        }
 
-            return points;
+        public RectangleF GetBounds()
+        {
+            RectangleF body = GetCameraBody();
+            RectangleF lens = GetCameraLens();
+            
+            float left = Math.Min(body.Left, lens.Left);
+            float top = Math.Min(body.Top, lens.Top);
+            float right = Math.Max(body.Right, lens.Right);
+            float bottom = Math.Max(body.Bottom, lens.Bottom);
+            
+            return new RectangleF(left, top, right - left, bottom - top);
         }
 
         public bool ContainsPoint(PointF point)
         {
-            PointF[] points = GetPoints();
-            
-            int j = points.Length - 1;
-            bool inside = false;
-            
-            for (int i = 0; i < points.Length; j = i++)
-            {
-                if (((points[i].Y > point.Y) != (points[j].Y > point.Y)) &&
-                    (point.X < (points[j].X - points[i].X) * (point.Y - points[i].Y) / (points[j].Y - points[i].Y) + points[i].X))
-                {
-                    inside = !inside;
-                }
-            }
-            
-            return inside;
+            RectangleF bounds = GetBounds();
+            return bounds.Contains(point);
         }
     }
 }
