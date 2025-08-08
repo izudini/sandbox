@@ -40,6 +40,7 @@ namespace KC_135
             Controls.Add(planePanel);
             Name = "Form1";
             Text = "Form1";
+            Load += Form1_Load;
             ResumeLayout(false);
         }
     }

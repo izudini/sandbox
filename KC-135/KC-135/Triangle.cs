@@ -14,6 +14,7 @@ namespace KC_135
         public bool IsSelected { get; set; }
         public bool IsConsoleVisible { get; set; }
         public ConcurrentQueue<string> MessageQueue { get; set; }
+        public string CurrentMode { get; set; }
 
         public Triangle(PointF location, float baseWidth, float height, float rotation, Color color)
         {
@@ -24,6 +25,7 @@ namespace KC_135
             Color = color;
             IsConsoleVisible = false;
             MessageQueue = new ConcurrentQueue<string>();
+            CurrentMode = "Operate";
         }
 
         public RectangleF GetCameraBody()
@@ -40,6 +42,7 @@ namespace KC_135
 
         public RectangleF GetCameraLens()
         {
+            /*
             float lensRadius = Math.Min(Base, Height) * 0.3f;
             float offsetDistance = Base * 0.25f;
             
@@ -56,6 +59,14 @@ namespace KC_135
                 lensY - lensRadius / 2,
                 lensRadius,
                 lensRadius
+            );
+            */
+
+            return new RectangleF(
+                this.Location.X - 10,
+                this.Location.Y - 10,
+                20,
+                20
             );
         }
 
