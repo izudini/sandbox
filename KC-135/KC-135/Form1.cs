@@ -11,16 +11,14 @@ namespace KC_135
 {
     public partial class Form1 : Form
     {
-        //OFF
-        //Init
-        //Standby
-        //Operate
+        
 
 
         private List<Triangle> triangles = new List<Triangle>();
         private Dictionary<Triangle, TextBox> consoleTextBoxes = new Dictionary<Triangle, TextBox>();
         private Dictionary<Triangle, Label> triangleLabels = new Dictionary<Triangle, Label>();
         private System.Windows.Forms.Timer messageUpdateTimer;
+        private TestControl testControlForm;
 
         public Form1()
         {
@@ -156,6 +154,17 @@ namespace KC_135
             if (value && !DesignMode && messageUpdateTimer != null && triangles != null)
             {
                 StartMessageGenerator();
+                OpenTestControlForm();
+            }
+        }
+
+        private void OpenTestControlForm()
+        {
+            if (testControlForm == null || testControlForm.IsDisposed)
+            {
+                testControlForm = new TestControl();
+                testControlForm.Location = new Point(this.Location.X + this.Width + 10, this.Location.Y);
+                testControlForm.Show();
             }
         }
 
@@ -524,6 +533,12 @@ namespace KC_135
                     label.Dispose();
                 }
                 triangleLabels.Clear();
+            }
+
+            if (testControlForm != null && !testControlForm.IsDisposed)
+            {
+                testControlForm.Close();
+                testControlForm.Dispose();
             }
         }
 
