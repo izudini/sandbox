@@ -14,7 +14,7 @@ namespace KC_135
         public bool IsSelected { get; set; }
         public bool IsConsoleVisible { get; set; }
         public ConcurrentQueue<string> MessageQueue { get; set; }
-        public string CurrentMode { get; set; }
+        public SensorMode CurrentMode { get; set; }
 
         public Triangle(PointF location, float baseWidth, float height, float rotation, Color color)
         {
@@ -25,7 +25,24 @@ namespace KC_135
             Color = color;
             IsConsoleVisible = false;
             MessageQueue = new ConcurrentQueue<string>();
-            CurrentMode = "Operate";
+            CurrentMode = SensorMode.Off;
+        }
+
+        public Color GetSensorModeColor()
+        {
+            switch (CurrentMode)
+            {
+                case SensorMode.Off:
+                    return Color.Gray;
+                case SensorMode.Initializing:
+                    return Color.Yellow;
+                case SensorMode.Operate:
+                    return Color.LightGreen;
+                case SensorMode.Degraded:
+                    return Color.Red;
+                default:
+                    return Color.Gray;
+            }
         }
 
         public RectangleF GetCameraBody()
@@ -74,24 +91,29 @@ namespace KC_135
         {
             float fovAngle = 60.0f;
             float fovDistance = Base * 1.5f;
+            int numSegments = 20; // Number of points to create smooth circular sector
             
             // Subtract 90 degrees to make 0° point up instead of right
-            double leftRadians = (Rotation - 90 - fovAngle / 2) * Math.PI / 180.0;
-            double rightRadians = (Rotation - 90 + fovAngle / 2) * Math.PI / 180.0;
+            double startRadians = (Rotation - 90 - fovAngle / 2) * Math.PI / 180.0;
+            double endRadians = (Rotation - 90 + fovAngle / 2) * Math.PI / 180.0;
             
-            PointF[] fovPoints = new PointF[4];
+            // Create array with center point + arc points + closing point
+            PointF[] fovPoints = new PointF[numSegments + 2];
             
             // Start from center of circle
             fovPoints[0] = Location;
-            fovPoints[1] = new PointF(
-                Location.X + (float)(fovDistance * Math.Cos(leftRadians)),
-                Location.Y + (float)(fovDistance * Math.Sin(leftRadians))
-            );
-            fovPoints[2] = new PointF(
-                Location.X + (float)(fovDistance * Math.Cos(rightRadians)),
-                Location.Y + (float)(fovDistance * Math.Sin(rightRadians))
-            );
-            fovPoints[3] = Location;
+            
+            // Create arc points
+            for (int i = 0; i <= numSegments; i++)
+            {
+                double t = (double)i / numSegments;
+                double currentRadians = startRadians + (endRadians - startRadians) * t;
+                
+                fovPoints[i + 1] = new PointF(
+                    Location.X + (float)(fovDistance * Math.Cos(currentRadians)),
+                    Location.Y + (float)(fovDistance * Math.Sin(currentRadians))
+                );
+            }
             
             return fovPoints;
         }
@@ -123,8 +145,57 @@ namespace KC_135
 
         public bool ContainsPoint(PointF point)
         {
-            RectangleF bounds = GetBounds();
-            return bounds.Contains(point);
+            // Check if point is within the sector (field of view)
+            return IsPointInSector(point);
+        }
+
+        private bool IsPointInSector(PointF point)
+        {
+            float fovAngle = 60.0f;
+            float fovDistance = Base * 1.5f;
+            
+            // Calculate distance from center to point
+            float dx = point.X - Location.X;
+            float dy = point.Y - Location.Y;
+            float distance = (float)Math.Sqrt(dx * dx + dy * dy);
+            
+            // If point is too far from center, it's not in the sector
+            if (distance > fovDistance)
+                return false;
+            
+            // Calculate angle from center to point
+            double pointAngle = Math.Atan2(dy, dx) * 180.0 / Math.PI;
+            
+            // Normalize angles to match our coordinate system (0° points up)
+            double normalizedPointAngle = pointAngle + 90;
+            double normalizedRotation = Rotation;
+            
+            // Normalize angles to [0, 360)
+            while (normalizedPointAngle < 0) normalizedPointAngle += 360;
+            while (normalizedPointAngle >= 360) normalizedPointAngle -= 360;
+            while (normalizedRotation < 0) normalizedRotation += 360;
+            while (normalizedRotation >= 360) normalizedRotation -= 360;
+            
+            // Calculate sector bounds
+            double startAngle = normalizedRotation - fovAngle / 2;
+            double endAngle = normalizedRotation + fovAngle / 2;
+            
+            // Handle angle wraparound
+            if (startAngle < 0)
+            {
+                startAngle += 360;
+                endAngle += 360;
+                if (normalizedPointAngle < 180) normalizedPointAngle += 360;
+            }
+            else if (endAngle >= 360)
+            {
+                startAngle -= 360;
+                endAngle -= 360;
+                if (normalizedPointAngle > 180) normalizedPointAngle -= 360;
+            }
+            
+            // Check if point angle is within sector bounds
+            return normalizedPointAngle >= startAngle && normalizedPointAngle <= endAngle;
         }
     }
 }

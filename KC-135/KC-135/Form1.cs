@@ -11,11 +11,9 @@ namespace KC_135
 {
     public partial class Form1 : Form
     {
-        
-
-
         private List<Triangle> triangles = new List<Triangle>();
         private Dictionary<Triangle, TextBox> consoleTextBoxes = new Dictionary<Triangle, TextBox>();
+        private Dictionary<Triangle, Button> consoleCloseButtons = new Dictionary<Triangle, Button>();
         private Dictionary<Triangle, Label> triangleLabels = new Dictionary<Triangle, Label>();
         private System.Windows.Forms.Timer messageUpdateTimer;
         private TestControl testControlForm;
@@ -68,7 +66,7 @@ namespace KC_135
                 new Triangle(new PointF(200, 150), 100, 60, 0, Color.Green),
                 new Triangle(new PointF(200, 220), 100, 60, 90, Color.Yellow),
                 new Triangle(new PointF(200, 220), 100, 60, 270, Color.Yellow),
-                new Triangle(new PointF(200, 260), 100, 50, 180, Color.Orange)
+                new Triangle(new PointF(200, 240), 100, 50, 180, Color.Orange)
             };
 
             // Create labels for each triangle
@@ -76,7 +74,7 @@ namespace KC_135
             {
                 Label operateLabel = new Label
                 {
-                    Text = triangle.CurrentMode,
+                    Text = triangle.CurrentMode.ToString(),
                     ForeColor = Color.White,
                     BackColor = Color.Black,
                     Font = new Font("Arial", 8, FontStyle.Bold),
@@ -85,14 +83,15 @@ namespace KC_135
                     BorderStyle = BorderStyle.FixedSingle
                 };
 
-                // Position the label at the triangle's centroid
-                PointF[] fovPoints = triangle.GetFieldOfView();
-                float centroidX = (fovPoints[0].X + fovPoints[1].X + fovPoints[2].X) / 3;
-                float centroidY = (fovPoints[0].Y + fovPoints[1].Y + fovPoints[2].Y) / 3;
+                // Position the label in the center of the triangle (halfway along rotation direction)
+                float centerDistance = triangle.Base * 0.5f; // Halfway to the edge
+                double centerRadians = (triangle.Rotation - 90) * Math.PI / 180.0; // Convert to radians, subtract 90 to make 0° point up
+                float centerX = triangle.Location.X + (float)(centerDistance * Math.Cos(centerRadians));
+                float centerY = triangle.Location.Y + (float)(centerDistance * Math.Sin(centerRadians));
                 
                 var labelSize = TextRenderer.MeasureText(operateLabel.Text, operateLabel.Font);
-                operateLabel.Left = (int)(centroidX - labelSize.Width / 2);
-                operateLabel.Top = (int)(centroidY - labelSize.Height / 2);
+                operateLabel.Left = (int)(centerX - labelSize.Width / 2);
+                operateLabel.Top = (int)(centerY - labelSize.Height / 2);
 
                 planePanel.Controls.Add(operateLabel);
                 triangleLabels[triangle] = operateLabel;
@@ -163,6 +162,7 @@ namespace KC_135
             if (testControlForm == null || testControlForm.IsDisposed)
             {
                 testControlForm = new TestControl();
+                testControlForm.SetTriangles(triangles, () => planePanel.Invalidate());
                 testControlForm.Location = new Point(this.Location.X + this.Width + 10, this.Location.Y);
                 testControlForm.Show();
             }
@@ -235,16 +235,17 @@ namespace KC_135
         {
             if (triangleLabels.ContainsKey(triangle))
             {
-                triangleLabels[triangle].Text = triangle.CurrentMode;
+                triangleLabels[triangle].Text = triangle.CurrentMode.ToString();
 
-                // Reposition the label to center it properly with the new text
-                PointF[] fovPoints = triangle.GetFieldOfView();
-                float centroidX = (fovPoints[0].X + fovPoints[1].X + fovPoints[2].X) / 3;
-                float centroidY = (fovPoints[0].Y + fovPoints[1].Y + fovPoints[2].Y) / 3;
+                // Reposition the label in the center of the triangle (halfway along rotation direction)
+                float centerDistance = triangle.Base * 0.5f; // Halfway to the edge
+                double centerRadians = (triangle.Rotation - 90) * Math.PI / 180.0; // Convert to radians, subtract 90 to make 0° point up
+                float centerX = triangle.Location.X + (float)(centerDistance * Math.Cos(centerRadians));
+                float centerY = triangle.Location.Y + (float)(centerDistance * Math.Sin(centerRadians));
                 
                 var labelSize = TextRenderer.MeasureText(triangleLabels[triangle].Text, triangleLabels[triangle].Font);
-                triangleLabels[triangle].Left = (int)(centroidX - labelSize.Width / 2);
-                triangleLabels[triangle].Top = (int)(centroidY - labelSize.Height / 2);
+                triangleLabels[triangle].Left = (int)(centerX - labelSize.Width / 2);
+                triangleLabels[triangle].Top = (int)(centerY - labelSize.Height / 2);
             }
         }
 
@@ -252,6 +253,22 @@ namespace KC_135
         {
             if (consoleTextBoxes.ContainsKey(triangle))
                 return;
+
+            // Close any other open consoles first
+            var trianglesToClose = new List<Triangle>(consoleTextBoxes.Keys);
+            foreach (Triangle otherTriangle in trianglesToClose)
+            {
+                if (otherTriangle != triangle)
+                {
+                    HideConsole(otherTriangle);
+                }
+            }
+
+            // Calculate sector center point (same as label positioning)
+            float centerDistance = triangle.Base * 0.5f; // Halfway to the edge
+            double centerRadians = (triangle.Rotation - 90) * Math.PI / 180.0; // Convert to radians, subtract 90 to make 0° point up
+            float centerX = triangle.Location.X + (float)(centerDistance * Math.Cos(centerRadians));
+            float centerY = triangle.Location.Y + (float)(centerDistance * Math.Sin(centerRadians));
 
             TextBox consoleTextBox = new TextBox
             {
@@ -263,8 +280,8 @@ namespace KC_135
                 Font = new Font("Consolas", 6.4f),
                 Width = 200,
                 Height = 150,
-                Left = (int)(triangle.Location.X + triangle.Base / 2 + 5),
-                Top = (int)(triangle.Location.Y - triangle.Height * 2 / 3)
+                Left = (int)(centerX - 100), // Center horizontally (width/2 = 200/2 = 100)
+                Top = (int)(centerY - 75)    // Center vertically (height/2 = 150/2 = 75)
             };
 
             // Create context menu for console
@@ -286,9 +303,31 @@ namespace KC_135
             contextMenu.Items.Add(copyItem);
             consoleTextBox.ContextMenuStrip = contextMenu;
 
+            // Create close button
+            Button closeButton = new Button
+            {
+                Text = "×",
+                Width = 20,
+                Height = 20,
+                Left = (int)(centerX - 100) + 180, // Position in upper right corner of console
+                Top = (int)(centerY - 75),
+                BackColor = Color.DarkRed,
+                ForeColor = Color.White,
+                Font = new Font("Arial", 10, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                FlatAppearance = { BorderSize = 0 }
+            };
+            closeButton.Click += (sender, e) => HideConsole(triangle);
+
             planePanel.Controls.Add(consoleTextBox);
+            planePanel.Controls.Add(closeButton);
             consoleTextBoxes[triangle] = consoleTextBox;
+            consoleCloseButtons[triangle] = closeButton;
             triangle.IsConsoleVisible = true;
+            
+            // Bring console and close button to front so they appear above the operate label
+            consoleTextBox.BringToFront();
+            closeButton.BringToFront();
         }
 
         private void HideConsole(Triangle triangle)
@@ -300,6 +339,15 @@ namespace KC_135
             planePanel.Controls.Remove(textBox);
             textBox.Dispose();
             consoleTextBoxes.Remove(triangle);
+
+            if (consoleCloseButtons.ContainsKey(triangle))
+            {
+                Button closeButton = consoleCloseButtons[triangle];
+                planePanel.Controls.Remove(closeButton);
+                closeButton.Dispose();
+                consoleCloseButtons.Remove(triangle);
+            }
+
             triangle.IsConsoleVisible = false;
         }
 
@@ -352,10 +400,11 @@ namespace KC_135
                     centerSize
                 );
                 g.FillEllipse(centerBrush, center);
+                
             }
 
             // Draw field of view triangle last (front layer)
-            using (Brush fovBrush = new SolidBrush(Color.FromArgb(180, triangle.Color)))
+            using (Brush fovBrush = new SolidBrush(Color.FromArgb(180, triangle.GetSensorModeColor())))
             {
                 g.FillPolygon(fovBrush, fieldOfView);
             }
@@ -363,6 +412,11 @@ namespace KC_135
             using (Pen fovPen = new Pen(Color.Black, 1))
             {
                 g.DrawPolygon(fovPen, fieldOfView);
+            }
+
+            using (Brush lensBrush = new SolidBrush(Color.Black))
+            {
+                g.FillEllipse(lensBrush, cameraLens);
             }
 
             // if (triangle.IsSelected)
@@ -524,6 +578,15 @@ namespace KC_135
                     textBox.Dispose();
                 }
                 consoleTextBoxes.Clear();
+            }
+
+            if (consoleCloseButtons != null)
+            {
+                foreach (var button in consoleCloseButtons.Values)
+                {
+                    button.Dispose();
+                }
+                consoleCloseButtons.Clear();
             }
 
             if (triangleLabels != null)
