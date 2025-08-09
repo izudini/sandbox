@@ -30,7 +30,7 @@ namespace KC_135
             // TestControl
             this.AutoScaleDimensions = new SizeF(6F, 13F);
             this.AutoScaleMode = AutoScaleMode.Font;
-            this.ClientSize = new Size(500, 400);
+            this.ClientSize = new Size(320, 200);
             this.Name = "TestControl";
             this.Text = "Sensor Control";
             this.StartPosition = FormStartPosition.Manual;
@@ -45,7 +45,7 @@ namespace KC_135
             if (triangles == null) return;
 
             sensorGroups = new List<GroupBox>();
-            int yPosition = 10;
+            int yPosition = 3;
 
             for (int i = 0; i < triangles.Count; i++)
             {
@@ -54,19 +54,20 @@ namespace KC_135
                 // Create group box for this sensor
                 GroupBox sensorGroup = new GroupBox
                 {
-                    Text = $"Sensor {i + 1}",
-                    Location = new Point(10, yPosition),
-                    Size = new Size(460, 80),
-                    Font = new Font("Arial", 9, FontStyle.Bold)
+                    Text = $"S{i + 1}",
+                    Location = new Point(3, yPosition),
+                    Size = new Size(314, 42),
+                    Font = new Font("Arial", 7, FontStyle.Bold)
                 };
 
                 // Create radio buttons for each sensor mode
                 RadioButton offRadio = new RadioButton
                 {
                     Text = "Off",
-                    Location = new Point(10, 20),
-                    Size = new Size(80, 20),
-                    Checked = triangle.CurrentMode == SensorMode.Off
+                    Location = new Point(3, 12),
+                    Size = new Size(35, 15),
+                    Checked = triangle.CurrentMode == SensorMode.Off,
+                    Font = new Font("Arial", 6.5f)
                 };
                 offRadio.CheckedChanged += (sender, e) => {
                     if (offRadio.Checked) {
@@ -77,10 +78,11 @@ namespace KC_135
 
                 RadioButton initRadio = new RadioButton
                 {
-                    Text = "Initializing",
-                    Location = new Point(100, 20),
-                    Size = new Size(100, 20),
-                    Checked = triangle.CurrentMode == SensorMode.Initializing
+                    Text = "Init",
+                    Location = new Point(40, 12),
+                    Size = new Size(38, 15),
+                    Checked = triangle.CurrentMode == SensorMode.Initializing,
+                    Font = new Font("Arial", 6.5f)
                 };
                 initRadio.CheckedChanged += (sender, e) => {
                     if (initRadio.Checked) {
@@ -91,10 +93,11 @@ namespace KC_135
 
                 RadioButton operateRadio = new RadioButton
                 {
-                    Text = "Operate",
-                    Location = new Point(210, 20),
-                    Size = new Size(80, 20),
-                    Checked = triangle.CurrentMode == SensorMode.Operate
+                    Text = "Op",
+                    Location = new Point(80, 12),
+                    Size = new Size(30, 15),
+                    Checked = triangle.CurrentMode == SensorMode.Operate,
+                    Font = new Font("Arial", 6.5f)
                 };
                 operateRadio.CheckedChanged += (sender, e) => {
                     if (operateRadio.Checked) {
@@ -105,14 +108,30 @@ namespace KC_135
 
                 RadioButton degradedRadio = new RadioButton
                 {
-                    Text = "Degraded",
-                    Location = new Point(300, 20),
-                    Size = new Size(90, 20),
-                    Checked = triangle.CurrentMode == SensorMode.Degraded
+                    Text = "Deg",
+                    Location = new Point(112, 12),
+                    Size = new Size(35, 15),
+                    Checked = triangle.CurrentMode == SensorMode.Degraded,
+                    Font = new Font("Arial", 6.5f)
                 };
                 degradedRadio.CheckedChanged += (sender, e) => {
                     if (degradedRadio.Checked) {
                         triangle.CurrentMode = SensorMode.Degraded;
+                        onSensorModeChanged?.Invoke();
+                    }
+                };
+
+                RadioButton declaringRadio = new RadioButton
+                {
+                    Text = "Decl",
+                    Location = new Point(149, 12),
+                    Size = new Size(40, 15),
+                    Checked = triangle.CurrentMode == SensorMode.Declaring,
+                    Font = new Font("Arial", 6.5f)
+                };
+                declaringRadio.CheckedChanged += (sender, e) => {
+                    if (declaringRadio.Checked) {
+                        triangle.CurrentMode = SensorMode.Declaring;
                         onSensorModeChanged?.Invoke();
                     }
                 };
@@ -122,12 +141,13 @@ namespace KC_135
                 sensorGroup.Controls.Add(initRadio);
                 sensorGroup.Controls.Add(operateRadio);
                 sensorGroup.Controls.Add(degradedRadio);
+                sensorGroup.Controls.Add(declaringRadio);
 
                 // Add group box to form
                 this.Controls.Add(sensorGroup);
                 sensorGroups.Add(sensorGroup);
 
-                yPosition += 90;
+                yPosition += 45;
             }
         }
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
@@ -228,6 +229,13 @@ namespace KC_135
             foreach (Triangle triangle in triangles)
             {
                 UpdateTriangleLabel(triangle);
+            }
+
+            // Check if any triangles are in declaring mode to trigger redraw for flashing
+            bool needsRedraw = triangles.Any(t => t.CurrentMode == SensorMode.Declaring);
+            if (needsRedraw)
+            {
+                planePanel.Invalidate();
             }
         }
 

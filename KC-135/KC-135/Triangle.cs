@@ -33,15 +33,20 @@ namespace KC_135
             switch (CurrentMode)
             {
                 case SensorMode.Off:
-                    return Color.Gray;
+                    return Color.White;
                 case SensorMode.Initializing:
                     return Color.Yellow;
                 case SensorMode.Operate:
                     return Color.LightGreen;
                 case SensorMode.Degraded:
-                    return Color.Red;
+                    return Color.Black;
+                case SensorMode.Declaring:
+                    // Flash between dark red and bright red at 2 Hz (500ms cycle, 250ms per color)
+                    long totalMilliseconds = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                    int flashInterval = (int)(totalMilliseconds / 250); // Flash every 250ms for 2 Hz
+                    return flashInterval % 2 == 0 ? Color.DarkRed : Color.Red;
                 default:
-                    return Color.Gray;
+                    return Color.White;
             }
         }
 

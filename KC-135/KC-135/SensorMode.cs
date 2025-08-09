@@ -11,6 +11,7 @@ namespace KC_135
         Off,  //gray
         Initializing, //yellow
         Operate,  //light green
-        Degraded  //red
+        Degraded,  //red
+        Declaring  //flashing dark red
     }
 }
