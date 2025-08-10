@@ -65,10 +65,10 @@ namespace KC_135
         {
             triangles = new List<Sensor>
             {
-                new Sensor("A", new PointF(200, 170), 80, 0, Color.Green),
-                new Sensor("B", new PointF(200, 200), 60, 90, Color.Yellow),
-                new Sensor("C", new PointF(200, 200), 60, 270, Color.Yellow),
-                new Sensor("Sensor 4", new PointF(200, 230), 50, 180, Color.Orange)
+                new Sensor("A", new PointF(200, 170), 80, 160, 0, Color.Green),
+                new Sensor("B", new PointF(200, 200), 60, 160, 90, Color.Yellow),
+                new Sensor("C", new PointF(200, 200), 60, 160, 270, Color.Yellow),
+                new Sensor("Sensor 4", new PointF(200, 230), 50, 160, 180, Color.Orange)
             };
 
             // Create labels for each triangle
@@ -674,6 +674,8 @@ namespace KC_135
             AddDetailLabel($"Mode: {sensor.CurrentMode}", yPos);
             yPos += spacing;
             AddDetailLabel($"Width: {sensor.WidthDegrees}°", yPos);
+            yPos += spacing;
+            AddDetailLabel($"Radius: {sensor.Radius} pixels", yPos);
             yPos += spacing;
             AddDetailLabel($"Rotation: {sensor.Rotation}°", yPos);
             yPos += spacing;

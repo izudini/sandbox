@@ -52,7 +52,7 @@ namespace KC_135
             Controls.Add(detailsPanel);
             Controls.Add(planePanel);
             Name = "Form1";
-            Text = "Form1";
+            Text = "KC-135 Sensor Simulator";
             Load += Form1_Load;
             ResumeLayout(false);
         }

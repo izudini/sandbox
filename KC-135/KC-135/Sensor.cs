@@ -9,6 +9,7 @@ namespace KC_135
         public string Name;
         public PointF Location { get; set; }
         public float WidthDegrees { get; set; }
+        public float Radius { get; set; }
         public float Rotation { get; set; }
         public Color Color { get; set; }
         public bool IsSelected { get; set; }
@@ -16,11 +17,12 @@ namespace KC_135
         public ConcurrentQueue<string> MessageQueue { get; set; }
         public SensorMode CurrentMode { get; set; }
 
-        public Sensor(string name, PointF location, float widthDegrees, float rotation, Color color)
+        public Sensor(string name, PointF location, float widthDegrees, float radius, float rotation, Color color)
         {
             Name = name;
             Location = location;
             WidthDegrees = widthDegrees;
+            Radius = radius;
             Rotation = rotation;
             Color = color;
             IsConsoleVisible = false;
@@ -75,7 +77,7 @@ namespace KC_135
         public PointF[] GetFieldOfView()
         {
             float fovAngle = WidthDegrees;
-            float fovDistance = 150; // Fixed distance for field of view
+            float fovDistance = Radius; // Use sensor radius for field of view distance
             int numSegments = 20; // Number of points to create smooth circular sector
             
             // Subtract 90 degrees to make 0° point up instead of right
@@ -137,7 +139,7 @@ namespace KC_135
         private bool IsPointInSector(PointF point)
         {
             float fovAngle = WidthDegrees;
-            float fovDistance = 150; // Fixed distance for sector
+            float fovDistance = Radius; // Use sensor radius for sector distance
             
             // Calculate distance from center to point
             float dx = point.X - Location.X;
