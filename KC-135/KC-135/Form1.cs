@@ -95,15 +95,18 @@ namespace KC_135
                 operateLabel.Left = (int)(centerX - labelSize.Width / 2);
                 operateLabel.Top = (int)(centerY - labelSize.Height / 2);
 
-                // Add click event handler to label
-                operateLabel.Click += (sender, e) => {
-                    if (triangle.IsConsoleVisible)
+                // Add right click event handler to label
+                operateLabel.MouseDown += (sender, e) => {
+                    if (e.Button == MouseButtons.Right)
                     {
-                        HideConsole(triangle);
-                    }
-                    else
-                    {
-                        ShowConsole(triangle);
+                        if (triangle.IsConsoleVisible)
+                        {
+                            HideConsole(triangle);
+                        }
+                        else
+                        {
+                            ShowConsole(triangle);
+                        }
                     }
                 };
 
@@ -481,7 +484,7 @@ namespace KC_135
 
             PointF mousePoint = new PointF(e.X, e.Y);
 
-            if (e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Right)
             {
                 Sensor clickedTriangle = null;
 
