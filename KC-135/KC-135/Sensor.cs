@@ -4,8 +4,9 @@ using System.Drawing;
 
 namespace KC_135
 {
-    public class Triangle
+    public class Sensor
     {
+        public string Name;
         public PointF Location { get; set; }
         public float WidthDegrees { get; set; }
         public float Rotation { get; set; }
@@ -15,8 +16,9 @@ namespace KC_135
         public ConcurrentQueue<string> MessageQueue { get; set; }
         public SensorMode CurrentMode { get; set; }
 
-        public Triangle(PointF location, float widthDegrees, float rotation, Color color)
+        public Sensor(string name, PointF location, float widthDegrees, float rotation, Color color)
         {
+            Name = name;
             Location = location;
             WidthDegrees = widthDegrees;
             Rotation = rotation;

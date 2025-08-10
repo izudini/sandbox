@@ -12,10 +12,11 @@ namespace KC_135
 {
     public partial class Form1 : Form
     {
-        private List<Triangle> triangles = new List<Triangle>();
-        private Dictionary<Triangle, TextBox> consoleTextBoxes = new Dictionary<Triangle, TextBox>();
-        private Dictionary<Triangle, Button> consoleCloseButtons = new Dictionary<Triangle, Button>();
-        private Dictionary<Triangle, Label> triangleLabels = new Dictionary<Triangle, Label>();
+        private List<Sensor> triangles = new List<Sensor>();
+        private Dictionary<Sensor, TextBox> consoleTextBoxes = new Dictionary<Sensor, TextBox>();
+        private Dictionary<Sensor, Button> consoleCloseButtons = new Dictionary<Sensor, Button>();
+        private Dictionary<Sensor, Label> consoleNameLabels = new Dictionary<Sensor, Label>();
+        private Dictionary<Sensor, Label> triangleLabels = new Dictionary<Sensor, Label>();
         private System.Windows.Forms.Timer messageUpdateTimer;
         private TestControl testControlForm;
 
@@ -62,16 +63,16 @@ namespace KC_135
 
         private void InitializeTriangles()
         {
-            triangles = new List<Triangle>
+            triangles = new List<Sensor>
             {
-                new Triangle(new PointF(200, 150), 60, 0, Color.Green),
-                new Triangle(new PointF(200, 220), 60, 90, Color.Yellow),
-                new Triangle(new PointF(200, 220), 60, 270, Color.Yellow),
-                new Triangle(new PointF(200, 240), 50, 180, Color.Orange)
+                new Sensor("A", new PointF(200, 170), 60, 0, Color.Green),
+                new Sensor("B", new PointF(200, 220), 60, 90, Color.Yellow),
+                new Sensor("C", new PointF(200, 220), 60, 270, Color.Yellow),
+                new Sensor("Sensor 4", new PointF(200, 240), 50, 180, Color.Orange)
             };
 
             // Create labels for each triangle
-            foreach (Triangle triangle in triangles)
+            foreach (Sensor triangle in triangles)
             {
                 Label operateLabel = new Label
                 {
@@ -199,7 +200,7 @@ namespace KC_135
 
                 while (true)
                 {
-                    foreach (Triangle triangle in triangles)
+                    foreach (Sensor triangle in triangles)
                     {
                         if (random.Next(0, 10) < 3)
                         {
@@ -220,7 +221,7 @@ namespace KC_135
         {
             foreach (var kvp in consoleTextBoxes)
             {
-                Triangle triangle = kvp.Key;
+                Sensor triangle = kvp.Key;
                 TextBox textBox = kvp.Value;
 
                 List<string> messages = new List<string>();
@@ -238,7 +239,7 @@ namespace KC_135
             }
 
             // Update labels for all triangles to ensure angle is current
-            foreach (Triangle triangle in triangles)
+            foreach (Sensor triangle in triangles)
             {
                 UpdateTriangleLabel(triangle);
             }
@@ -251,7 +252,7 @@ namespace KC_135
             }
         }
 
-        private void UpdateTriangleLabel(Triangle triangle)
+        private void UpdateTriangleLabel(Sensor triangle)
         {
             if (triangleLabels.ContainsKey(triangle))
             {
@@ -269,14 +270,14 @@ namespace KC_135
             }
         }
 
-        private void ShowConsole(Triangle triangle)
+        private void ShowConsole(Sensor triangle)
         {
             if (consoleTextBoxes.ContainsKey(triangle))
                 return;
 
             // Close any other open consoles first
-            var trianglesToClose = new List<Triangle>(consoleTextBoxes.Keys);
-            foreach (Triangle otherTriangle in trianglesToClose)
+            var trianglesToClose = new List<Sensor>(consoleTextBoxes.Keys);
+            foreach (Sensor otherTriangle in trianglesToClose)
             {
                 if (otherTriangle != triangle)
                 {
@@ -323,6 +324,20 @@ namespace KC_135
             contextMenu.Items.Add(copyItem);
             consoleTextBox.ContextMenuStrip = contextMenu;
 
+            // Create name label for console (positioned above console window)
+            Label nameLabel = new Label
+            {
+                Text = triangle.Name,
+                Width = 100,
+                Height = 15,
+                Left = (int)(centerX - 100), // Align with left edge of console
+                Top = (int)(centerY - 75) - 10, // Position above console window (20 pixels above)
+                BackColor = Color.DarkGray,
+                ForeColor = Color.Black,
+                Font = new Font("Consolas", 8f, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
             // Create close button
             Button closeButton = new Button
             {
@@ -340,17 +355,20 @@ namespace KC_135
             closeButton.Click += (sender, e) => HideConsole(triangle);
 
             planePanel.Controls.Add(consoleTextBox);
+            planePanel.Controls.Add(nameLabel);
             planePanel.Controls.Add(closeButton);
             consoleTextBoxes[triangle] = consoleTextBox;
+            consoleNameLabels[triangle] = nameLabel;
             consoleCloseButtons[triangle] = closeButton;
             triangle.IsConsoleVisible = true;
             
-            // Bring console and close button to front so they appear above the operate label
+            // Bring console, name label, and close button to front so they appear above the operate label
             consoleTextBox.BringToFront();
+            nameLabel.BringToFront();
             closeButton.BringToFront();
         }
 
-        private void HideConsole(Triangle triangle)
+        private void HideConsole(Sensor triangle)
         {
             if (!consoleTextBoxes.ContainsKey(triangle))
                 return;
@@ -359,6 +377,14 @@ namespace KC_135
             planePanel.Controls.Remove(textBox);
             textBox.Dispose();
             consoleTextBoxes.Remove(triangle);
+
+            if (consoleNameLabels.ContainsKey(triangle))
+            {
+                Label nameLabel = consoleNameLabels[triangle];
+                planePanel.Controls.Remove(nameLabel);
+                nameLabel.Dispose();
+                consoleNameLabels.Remove(triangle);
+            }
 
             if (consoleCloseButtons.ContainsKey(triangle))
             {
@@ -388,13 +414,13 @@ namespace KC_135
 
             Graphics g = e.Graphics;
 
-            foreach (Triangle triangle in triangles)
+            foreach (Sensor triangle in triangles)
             {
                 DrawTriangle(g, triangle);
             }
         }
 
-        private void DrawTriangle(Graphics g, Triangle triangle)
+        private void DrawTriangle(Graphics g, Sensor triangle)
         {
             RectangleF cameraLens = triangle.GetCameraLens();
             PointF[] fieldOfView = triangle.GetFieldOfView();
@@ -457,7 +483,7 @@ namespace KC_135
 
             if (e.Button == MouseButtons.Left)
             {
-                Triangle clickedTriangle = null;
+                Sensor clickedTriangle = null;
 
                 for (int i = triangles.Count - 1; i >= 0; i--)
                 {
@@ -598,6 +624,15 @@ namespace KC_135
                     textBox.Dispose();
                 }
                 consoleTextBoxes.Clear();
+            }
+
+            if (consoleNameLabels != null)
+            {
+                foreach (var label in consoleNameLabels.Values)
+                {
+                    label.Dispose();
+                }
+                consoleNameLabels.Clear();
             }
 
             if (consoleCloseButtons != null)

@@ -7,7 +7,7 @@ namespace KC_135
 {
     public partial class TestControl : Form
     {
-        private List<Triangle> triangles;
+        private List<Sensor> triangles;
         private List<GroupBox> sensorGroups;
         private Action onSensorModeChanged;
 
@@ -16,7 +16,7 @@ namespace KC_135
             InitializeComponent();
         }
 
-        public void SetTriangles(List<Triangle> triangleList, Action onModeChanged = null)
+        public void SetTriangles(List<Sensor> triangleList, Action onModeChanged = null)
         {
             triangles = triangleList;
             onSensorModeChanged = onModeChanged;
@@ -49,7 +49,7 @@ namespace KC_135
 
             for (int i = 0; i < triangles.Count; i++)
             {
-                Triangle triangle = triangles[i];
+                Sensor triangle = triangles[i];
                 
                 // Create group box for this sensor
                 GroupBox sensorGroup = new GroupBox
