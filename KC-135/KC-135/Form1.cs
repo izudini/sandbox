@@ -65,10 +65,10 @@ namespace KC_135
         {
             triangles = new List<Sensor>
             {
-                new Sensor("A", new PointF(200, 170), 60, 0, Color.Green),
-                new Sensor("B", new PointF(200, 220), 60, 90, Color.Yellow),
-                new Sensor("C", new PointF(200, 220), 60, 270, Color.Yellow),
-                new Sensor("Sensor 4", new PointF(200, 240), 50, 180, Color.Orange)
+                new Sensor("A", new PointF(200, 170), 80, 0, Color.Green),
+                new Sensor("B", new PointF(200, 200), 60, 90, Color.Yellow),
+                new Sensor("C", new PointF(200, 200), 60, 270, Color.Yellow),
+                new Sensor("Sensor 4", new PointF(200, 230), 50, 180, Color.Orange)
             };
 
             // Create labels for each triangle
@@ -95,10 +95,11 @@ namespace KC_135
                 operateLabel.Left = (int)(centerX - labelSize.Width / 2);
                 operateLabel.Top = (int)(centerY - labelSize.Height / 2);
 
-                // Add right click event handler to label
+                // Add click event handler to label
                 operateLabel.MouseDown += (sender, e) => {
                     if (e.Button == MouseButtons.Right)
                     {
+                        // Right click - show/hide console
                         if (triangle.IsConsoleVisible)
                         {
                             HideConsole(triangle);
@@ -107,6 +108,11 @@ namespace KC_135
                         {
                             ShowConsole(triangle);
                         }
+                    }
+                    else if (e.Button == MouseButtons.Left)
+                    {
+                        // Left click - show details panel
+                        ShowSectorDetails(triangle);
                     }
                 };
 
@@ -484,34 +490,22 @@ namespace KC_135
 
             PointF mousePoint = new PointF(e.X, e.Y);
 
-            if (e.Button == MouseButtons.Right)
+            Sensor clickedTriangle = null;
+
+            for (int i = triangles.Count - 1; i >= 0; i--)
             {
-                Sensor clickedTriangle = null;
-
-                for (int i = triangles.Count - 1; i >= 0; i--)
+                if (triangles[i].ContainsPoint(mousePoint))
                 {
-                    if (triangles[i].ContainsPoint(mousePoint))
-                    {
-                        clickedTriangle = triangles[i];
-                        break;
-                    }
+                    clickedTriangle = triangles[i];
+                    break;
                 }
+            }
 
-                if (clickedTriangle != null)
+            if (clickedTriangle != null)
+            {
+                if (e.Button == MouseButtons.Right)
                 {
-                    // if (checkBoxSelection.Checked)
-                    // {
-                    //     if (selectedTriangle != null)
-                    //         selectedTriangle.IsSelected = false;
-                    //     
-                    //     selectedTriangle = clickedTriangle;
-                    //     selectedTriangle.IsSelected = true;
-                    //     
-                    //     triangles.Remove(clickedTriangle);
-                    //     triangles.Add(clickedTriangle);
-                    // }
-                    // else
-                    // {
+                    // Right click - show/hide console
                     if (clickedTriangle.IsConsoleVisible)
                     {
                         HideConsole(clickedTriangle);
@@ -520,29 +514,21 @@ namespace KC_135
                     {
                         ShowConsole(clickedTriangle);
                     }
-
-                    // draggedTriangle = clickedTriangle;
-                    // isDragging = true;
-                    // lastMousePosition = mousePoint;
-                    // dragOffset = new PointF(
-                    //     mousePoint.X - draggedTriangle.Location.X,
-                    //     mousePoint.Y - draggedTriangle.Location.Y
-                    // );
-
-                    triangles.Remove(clickedTriangle);
-                    triangles.Add(clickedTriangle);
-                    // }
                 }
-                // else if (checkBoxSelection.Checked)
-                // {
-                //     if (selectedTriangle != null)
-                //     {
-                //         selectedTriangle.IsSelected = false;
-                //         selectedTriangle = null;
-                //     }
-                // }
+                else if (e.Button == MouseButtons.Left)
+                {
+                    // Left click - show details panel
+                    ShowSectorDetails(clickedTriangle);
+                }
 
+                triangles.Remove(clickedTriangle);
+                triangles.Add(clickedTriangle);
                 planePanel.Invalidate();
+            }
+            else if (e.Button == MouseButtons.Left)
+            {
+                // Left click on empty area - hide details panel
+                HideSectorDetails();
             }
             // else if (e.Button == MouseButtons.Right && selectedTriangle != null && checkBoxSelection.Checked)
             // {
@@ -661,6 +647,62 @@ namespace KC_135
                 testControlForm.Close();
                 testControlForm.Dispose();
             }
+        }
+
+        private void ShowSectorDetails(Sensor sensor)
+        {
+            // Clear existing controls
+            detailsPanel.Controls.Clear();
+            
+            // Create title label
+            Label titleLabel = new Label
+            {
+                Text = $"Sensor {sensor.Name} Details",
+                Font = new Font("Arial", 10, FontStyle.Bold),
+                Location = new Point(10, 10),
+                Size = new Size(230, 20),
+                ForeColor = Color.Black
+            };
+            detailsPanel.Controls.Add(titleLabel);
+            
+            // Create details labels
+            int yPos = 40;
+            int spacing = 25;
+            
+            AddDetailLabel($"Name: {sensor.Name}", yPos);
+            yPos += spacing;
+            AddDetailLabel($"Mode: {sensor.CurrentMode}", yPos);
+            yPos += spacing;
+            AddDetailLabel($"Width: {sensor.WidthDegrees}°", yPos);
+            yPos += spacing;
+            AddDetailLabel($"Rotation: {sensor.Rotation}°", yPos);
+            yPos += spacing;
+            AddDetailLabel($"Location: ({sensor.Location.X:F0}, {sensor.Location.Y:F0})", yPos);
+            yPos += spacing;
+            AddDetailLabel($"Console Visible: {(sensor.IsConsoleVisible ? "Yes" : "No")}", yPos);
+            yPos += spacing;
+            AddDetailLabel($"Message Queue: {sensor.MessageQueue.Count} messages", yPos);
+            
+            detailsPanel.Visible = true;
+        }
+        
+        private void AddDetailLabel(string text, int yPosition)
+        {
+            Label label = new Label
+            {
+                Text = text,
+                Font = new Font("Arial", 9),
+                Location = new Point(10, yPosition),
+                Size = new Size(230, 20),
+                ForeColor = Color.Black
+            };
+            detailsPanel.Controls.Add(label);
+        }
+        
+        private void HideSectorDetails()
+        {
+            detailsPanel.Visible = false;
+            detailsPanel.Controls.Clear();
         }
 
         private void Form1_Load(object sender, EventArgs e)
