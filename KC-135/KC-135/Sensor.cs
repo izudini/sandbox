@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace KC_135
 {
@@ -15,6 +17,10 @@ namespace KC_135
         public bool IsSelected { get; set; }
         public bool IsConsoleVisible { get; set; }
         public ConcurrentQueue<string> MessageQueue { get; set; }
+        public List<string> MessageBuffer { get; private set; }
+        public TextBox ConsoleTextBox { get; set; }
+        public Label ConsoleNameLabel { get; set; }
+        public Button ConsoleCloseButton { get; set; }
         public SensorMode CurrentMode { get; set; }
 
         public Sensor(string name, PointF location, float widthDegrees, float radius, float rotation, Color color)
@@ -27,6 +33,7 @@ namespace KC_135
             Color = color;
             IsConsoleVisible = false;
             MessageQueue = new ConcurrentQueue<string>();
+            MessageBuffer = new List<string>();
             CurrentMode = SensorMode.Off;
         }
 
@@ -183,6 +190,55 @@ namespace KC_135
             
             // Check if point angle is within sector bounds
             return normalizedPointAngle >= startAngle && normalizedPointAngle <= endAngle;
+        }
+
+        public void ProcessMessages()
+        {
+            // Move messages from queue to persistent buffer
+            List<string> newMessages = new List<string>();
+            while (MessageQueue.TryDequeue(out string message))
+            {
+                MessageBuffer.Add(message);
+                newMessages.Add(message);
+                
+                // Keep buffer size reasonable (limit to last 1000 messages)
+                if (MessageBuffer.Count > 1000)
+                {
+                    MessageBuffer.RemoveAt(0);
+                }
+            }
+
+            // Update console display if visible
+            if (IsConsoleVisible && ConsoleTextBox != null && newMessages.Count > 0)
+            {
+                ConsoleTextBox.AppendText(string.Join(Environment.NewLine, newMessages) + Environment.NewLine);
+                ConsoleTextBox.SelectionStart = ConsoleTextBox.Text.Length;
+                ConsoleTextBox.ScrollToCaret();
+            }
+        }
+
+        public void UpdateConsoleDisplay()
+        {
+            // When console becomes visible, show all buffered messages
+            if (IsConsoleVisible && ConsoleTextBox != null)
+            {
+                ConsoleTextBox.Clear();
+                if (MessageBuffer.Count > 0)
+                {
+                    ConsoleTextBox.AppendText(string.Join(Environment.NewLine, MessageBuffer) + Environment.NewLine);
+                    ConsoleTextBox.SelectionStart = ConsoleTextBox.Text.Length;
+                    ConsoleTextBox.ScrollToCaret();
+                }
+            }
+        }
+
+        public void ClearConsole()
+        {
+            MessageBuffer.Clear();
+            if (ConsoleTextBox != null)
+            {
+                ConsoleTextBox.Clear();
+            }
         }
     }
 }

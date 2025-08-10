@@ -13,9 +13,6 @@ namespace KC_135
     public partial class Form1 : Form
     {
         private List<Sensor> triangles = new List<Sensor>();
-        private Dictionary<Sensor, TextBox> consoleTextBoxes = new Dictionary<Sensor, TextBox>();
-        private Dictionary<Sensor, Button> consoleCloseButtons = new Dictionary<Sensor, Button>();
-        private Dictionary<Sensor, Label> consoleNameLabels = new Dictionary<Sensor, Label>();
         private Dictionary<Sensor, Label> triangleLabels = new Dictionary<Sensor, Label>();
         private System.Windows.Forms.Timer messageUpdateTimer;
         private TestControl testControlForm;
@@ -228,28 +225,10 @@ namespace KC_135
 
         private void MessageUpdateTimer_Tick(object sender, EventArgs e)
         {
-            foreach (var kvp in consoleTextBoxes)
-            {
-                Sensor triangle = kvp.Key;
-                TextBox textBox = kvp.Value;
-
-                List<string> messages = new List<string>();
-                while (triangle.MessageQueue.TryDequeue(out string message) && messages.Count < 50)
-                {
-                    messages.Add(message);
-                }
-
-                if (messages.Count > 0)
-                {
-                    textBox.AppendText(string.Join(Environment.NewLine, messages) + Environment.NewLine);
-                    textBox.SelectionStart = textBox.Text.Length;
-                    textBox.ScrollToCaret();
-                }
-            }
-
-            // Update labels for all triangles to ensure angle is current
+            // Process messages for all sensors (stores in persistent buffer)
             foreach (Sensor triangle in triangles)
             {
+                triangle.ProcessMessages();
                 UpdateTriangleLabel(triangle);
             }
 
@@ -281,14 +260,13 @@ namespace KC_135
 
         private void ShowConsole(Sensor triangle)
         {
-            if (consoleTextBoxes.ContainsKey(triangle))
+            if (triangle.IsConsoleVisible)
                 return;
 
             // Close any other open consoles first
-            var trianglesToClose = new List<Sensor>(consoleTextBoxes.Keys);
-            foreach (Sensor otherTriangle in trianglesToClose)
+            foreach (Sensor otherTriangle in triangles)
             {
-                if (otherTriangle != triangle)
+                if (otherTriangle != triangle && otherTriangle.IsConsoleVisible)
                 {
                     HideConsole(otherTriangle);
                 }
@@ -300,7 +278,8 @@ namespace KC_135
             float centerX = triangle.Location.X + (float)(centerDistance * Math.Cos(centerRadians));
             float centerY = triangle.Location.Y + (float)(centerDistance * Math.Sin(centerRadians));
 
-            TextBox consoleTextBox = new TextBox
+            // Create console textbox
+            triangle.ConsoleTextBox = new TextBox
             {
                 Multiline = true,
                 ReadOnly = true,
@@ -318,23 +297,23 @@ namespace KC_135
             ContextMenuStrip contextMenu = new ContextMenuStrip();
 
             ToolStripMenuItem clearItem = new ToolStripMenuItem("Clear");
-            clearItem.Click += (sender, e) => consoleTextBox.Clear();
+            clearItem.Click += (sender, e) => triangle.ClearConsole();
 
             ToolStripMenuItem copyItem = new ToolStripMenuItem("Copy");
             copyItem.Click += (sender, e) =>
             {
-                if (!string.IsNullOrEmpty(consoleTextBox.Text))
+                if (!string.IsNullOrEmpty(triangle.ConsoleTextBox.Text))
                 {
-                    Clipboard.SetText(consoleTextBox.Text);
+                    Clipboard.SetText(triangle.ConsoleTextBox.Text);
                 }
             };
 
             contextMenu.Items.Add(clearItem);
             contextMenu.Items.Add(copyItem);
-            consoleTextBox.ContextMenuStrip = contextMenu;
+            triangle.ConsoleTextBox.ContextMenuStrip = contextMenu;
 
             // Create name label for console (positioned above console window)
-            Label nameLabel = new Label
+            triangle.ConsoleNameLabel = new Label
             {
                 Text = triangle.Name,
                 Width = 100,
@@ -348,7 +327,7 @@ namespace KC_135
             };
 
             // Create close button
-            Button closeButton = new Button
+            triangle.ConsoleCloseButton = new Button
             {
                 Text = "×",
                 Width = 20,
@@ -361,46 +340,47 @@ namespace KC_135
                 FlatStyle = FlatStyle.Flat,
                 FlatAppearance = { BorderSize = 0 }
             };
-            closeButton.Click += (sender, e) => HideConsole(triangle);
+            triangle.ConsoleCloseButton.Click += (sender, e) => HideConsole(triangle);
 
-            planePanel.Controls.Add(consoleTextBox);
-            planePanel.Controls.Add(nameLabel);
-            planePanel.Controls.Add(closeButton);
-            consoleTextBoxes[triangle] = consoleTextBox;
-            consoleNameLabels[triangle] = nameLabel;
-            consoleCloseButtons[triangle] = closeButton;
+            planePanel.Controls.Add(triangle.ConsoleTextBox);
+            planePanel.Controls.Add(triangle.ConsoleNameLabel);
+            planePanel.Controls.Add(triangle.ConsoleCloseButton);
+            
             triangle.IsConsoleVisible = true;
             
+            // Show all buffered messages in the console
+            triangle.UpdateConsoleDisplay();
+            
             // Bring console, name label, and close button to front so they appear above the operate label
-            consoleTextBox.BringToFront();
-            nameLabel.BringToFront();
-            closeButton.BringToFront();
+            triangle.ConsoleTextBox.BringToFront();
+            triangle.ConsoleNameLabel.BringToFront();
+            triangle.ConsoleCloseButton.BringToFront();
         }
 
         private void HideConsole(Sensor triangle)
         {
-            if (!consoleTextBoxes.ContainsKey(triangle))
+            if (!triangle.IsConsoleVisible)
                 return;
 
-            TextBox textBox = consoleTextBoxes[triangle];
-            planePanel.Controls.Remove(textBox);
-            textBox.Dispose();
-            consoleTextBoxes.Remove(triangle);
-
-            if (consoleNameLabels.ContainsKey(triangle))
+            if (triangle.ConsoleTextBox != null)
             {
-                Label nameLabel = consoleNameLabels[triangle];
-                planePanel.Controls.Remove(nameLabel);
-                nameLabel.Dispose();
-                consoleNameLabels.Remove(triangle);
+                planePanel.Controls.Remove(triangle.ConsoleTextBox);
+                triangle.ConsoleTextBox.Dispose();
+                triangle.ConsoleTextBox = null;
             }
 
-            if (consoleCloseButtons.ContainsKey(triangle))
+            if (triangle.ConsoleNameLabel != null)
             {
-                Button closeButton = consoleCloseButtons[triangle];
-                planePanel.Controls.Remove(closeButton);
-                closeButton.Dispose();
-                consoleCloseButtons.Remove(triangle);
+                planePanel.Controls.Remove(triangle.ConsoleNameLabel);
+                triangle.ConsoleNameLabel.Dispose();
+                triangle.ConsoleNameLabel = null;
+            }
+
+            if (triangle.ConsoleCloseButton != null)
+            {
+                planePanel.Controls.Remove(triangle.ConsoleCloseButton);
+                triangle.ConsoleCloseButton.Dispose();
+                triangle.ConsoleCloseButton = null;
             }
 
             triangle.IsConsoleVisible = false;
@@ -525,10 +505,26 @@ namespace KC_135
                 triangles.Add(clickedTriangle);
                 planePanel.Invalidate();
             }
-            else if (e.Button == MouseButtons.Left)
+            else
             {
-                // Left click on empty area - hide details panel
-                HideSectorDetails();
+                // Click on empty area
+                if (e.Button == MouseButtons.Left)
+                {
+                    // Left click on empty area - hide details panel
+                    HideSectorDetails();
+                }
+                else if (e.Button == MouseButtons.Right)
+                {
+                    // Right click on empty area - close any open console
+                    foreach (Sensor sensor in triangles)
+                    {
+                        if (sensor.IsConsoleVisible)
+                        {
+                            HideConsole(sensor);
+                            break; // Only one console can be open at a time
+                        }
+                    }
+                }
             }
             // else if (e.Button == MouseButtons.Right && selectedTriangle != null && checkBoxSelection.Checked)
             // {
@@ -606,31 +602,21 @@ namespace KC_135
                 messageUpdateTimer = null;
             }
 
-            if (consoleTextBoxes != null)
+            // Clean up sensor console resources
+            foreach (var sensor in triangles)
             {
-                foreach (var textBox in consoleTextBoxes.Values)
+                if (sensor.ConsoleTextBox != null)
                 {
-                    textBox.Dispose();
+                    sensor.ConsoleTextBox.Dispose();
                 }
-                consoleTextBoxes.Clear();
-            }
-
-            if (consoleNameLabels != null)
-            {
-                foreach (var label in consoleNameLabels.Values)
+                if (sensor.ConsoleNameLabel != null)
                 {
-                    label.Dispose();
+                    sensor.ConsoleNameLabel.Dispose();
                 }
-                consoleNameLabels.Clear();
-            }
-
-            if (consoleCloseButtons != null)
-            {
-                foreach (var button in consoleCloseButtons.Values)
+                if (sensor.ConsoleCloseButton != null)
                 {
-                    button.Dispose();
+                    sensor.ConsoleCloseButton.Dispose();
                 }
-                consoleCloseButtons.Clear();
             }
 
             if (triangleLabels != null)
@@ -683,7 +669,7 @@ namespace KC_135
             yPos += spacing;
             AddDetailLabel($"Console Visible: {(sensor.IsConsoleVisible ? "Yes" : "No")}", yPos);
             yPos += spacing;
-            AddDetailLabel($"Message Queue: {sensor.MessageQueue.Count} messages", yPos);
+            AddDetailLabel($"Messages Stored: {sensor.MessageBuffer.Count} total", yPos);
             
             detailsPanel.Visible = true;
         }
