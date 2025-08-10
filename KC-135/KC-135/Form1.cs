@@ -64,10 +64,10 @@ namespace KC_135
         {
             triangles = new List<Triangle>
             {
-                new Triangle(new PointF(200, 150), 100, 60, 0, Color.Green),
-                new Triangle(new PointF(200, 220), 100, 60, 90, Color.Yellow),
-                new Triangle(new PointF(200, 220), 100, 60, 270, Color.Yellow),
-                new Triangle(new PointF(200, 240), 100, 50, 180, Color.Orange)
+                new Triangle(new PointF(200, 150), 60, 0, Color.Green),
+                new Triangle(new PointF(200, 220), 60, 90, Color.Yellow),
+                new Triangle(new PointF(200, 220), 60, 270, Color.Yellow),
+                new Triangle(new PointF(200, 240), 50, 180, Color.Orange)
             };
 
             // Create labels for each triangle
@@ -85,7 +85,7 @@ namespace KC_135
                 };
 
                 // Position the label in the center of the triangle (halfway along rotation direction)
-                float centerDistance = triangle.Base * 0.5f; // Halfway to the edge
+                float centerDistance = 75; // Fixed distance for label positioning
                 double centerRadians = (triangle.Rotation - 90) * Math.PI / 180.0; // Convert to radians, subtract 90 to make 0° point up
                 float centerX = triangle.Location.X + (float)(centerDistance * Math.Cos(centerRadians));
                 float centerY = triangle.Location.Y + (float)(centerDistance * Math.Sin(centerRadians));
@@ -93,6 +93,18 @@ namespace KC_135
                 var labelSize = TextRenderer.MeasureText(operateLabel.Text, operateLabel.Font);
                 operateLabel.Left = (int)(centerX - labelSize.Width / 2);
                 operateLabel.Top = (int)(centerY - labelSize.Height / 2);
+
+                // Add click event handler to label
+                operateLabel.Click += (sender, e) => {
+                    if (triangle.IsConsoleVisible)
+                    {
+                        HideConsole(triangle);
+                    }
+                    else
+                    {
+                        ShowConsole(triangle);
+                    }
+                };
 
                 planePanel.Controls.Add(operateLabel);
                 triangleLabels[triangle] = operateLabel;
@@ -246,7 +258,7 @@ namespace KC_135
                 triangleLabels[triangle].Text = triangle.CurrentMode.ToString();
 
                 // Reposition the label in the center of the triangle (halfway along rotation direction)
-                float centerDistance = triangle.Base * 0.5f; // Halfway to the edge
+                float centerDistance = 75; // Fixed distance for label positioning
                 double centerRadians = (triangle.Rotation - 90) * Math.PI / 180.0; // Convert to radians, subtract 90 to make 0° point up
                 float centerX = triangle.Location.X + (float)(centerDistance * Math.Cos(centerRadians));
                 float centerY = triangle.Location.Y + (float)(centerDistance * Math.Sin(centerRadians));
@@ -273,7 +285,7 @@ namespace KC_135
             }
 
             // Calculate sector center point (same as label positioning)
-            float centerDistance = triangle.Base * 0.5f; // Halfway to the edge
+            float centerDistance = 75; // Fixed distance for console positioning
             double centerRadians = (triangle.Rotation - 90) * Math.PI / 180.0; // Convert to radians, subtract 90 to make 0° point up
             float centerX = triangle.Location.X + (float)(centerDistance * Math.Cos(centerRadians));
             float centerY = triangle.Location.Y + (float)(centerDistance * Math.Sin(centerRadians));
@@ -364,7 +376,7 @@ namespace KC_135
         //     if (consoleTextBoxes.ContainsKey(triangle))
         //     {
         //         TextBox textBox = consoleTextBoxes[triangle];
-        //         textBox.Left = (int)(triangle.Location.X + triangle.Base/2 + 5);
+        //         textBox.Left = (int)(triangle.Location.X + 75 + 5);
         //         textBox.Top = (int)(triangle.Location.Y - triangle.Height * 2/3);
         //     }
         // }

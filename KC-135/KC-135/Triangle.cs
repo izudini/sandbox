@@ -7,8 +7,7 @@ namespace KC_135
     public class Triangle
     {
         public PointF Location { get; set; }
-        public float Base { get; set; }
-        public float Height { get; set; }
+        public float WidthDegrees { get; set; }
         public float Rotation { get; set; }
         public Color Color { get; set; }
         public bool IsSelected { get; set; }
@@ -16,11 +15,10 @@ namespace KC_135
         public ConcurrentQueue<string> MessageQueue { get; set; }
         public SensorMode CurrentMode { get; set; }
 
-        public Triangle(PointF location, float baseWidth, float height, float rotation, Color color)
+        public Triangle(PointF location, float widthDegrees, float rotation, Color color)
         {
             Location = location;
-            Base = baseWidth;
-            Height = height;
+            WidthDegrees = widthDegrees;
             Rotation = rotation;
             Color = color;
             IsConsoleVisible = false;
@@ -52,7 +50,7 @@ namespace KC_135
 
         public RectangleF GetCameraBody()
         {
-            float radius = Math.Min(Base, Height) / 2;
+            float radius = 15; // Fixed radius for camera body
             
             return new RectangleF(
                 Location.X - radius,
@@ -64,26 +62,6 @@ namespace KC_135
 
         public RectangleF GetCameraLens()
         {
-            /*
-            float lensRadius = Math.Min(Base, Height) * 0.3f;
-            float offsetDistance = Base * 0.25f;
-            
-            // Subtract 90 degrees to make 0° point up instead of right
-            double radians = (Rotation - 90) * Math.PI / 180.0;
-            float cos = (float)Math.Cos(radians);
-            float sin = (float)Math.Sin(radians);
-            
-            float lensX = Location.X + (offsetDistance * cos);
-            float lensY = Location.Y + (offsetDistance * sin);
-            
-            return new RectangleF(
-                lensX - lensRadius / 2,
-                lensY - lensRadius / 2,
-                lensRadius,
-                lensRadius
-            );
-            */
-
             return new RectangleF(
                 this.Location.X - 10,
                 this.Location.Y - 10,
@@ -94,8 +72,8 @@ namespace KC_135
 
         public PointF[] GetFieldOfView()
         {
-            float fovAngle = 60.0f;
-            float fovDistance = Base * 1.5f;
+            float fovAngle = WidthDegrees;
+            float fovDistance = 150; // Fixed distance for field of view
             int numSegments = 20; // Number of points to create smooth circular sector
             
             // Subtract 90 degrees to make 0° point up instead of right
@@ -156,8 +134,8 @@ namespace KC_135
 
         private bool IsPointInSector(PointF point)
         {
-            float fovAngle = 60.0f;
-            float fovDistance = Base * 1.5f;
+            float fovAngle = WidthDegrees;
+            float fovDistance = 150; // Fixed distance for sector
             
             // Calculate distance from center to point
             float dx = point.X - Location.X;
