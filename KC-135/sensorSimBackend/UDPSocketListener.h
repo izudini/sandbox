@@ -22,7 +22,7 @@ private:
     int socketFd;
     int port;
     std::queue<std::string> messageQueue;
-    std::mutex queueMutex;
+    mutable std::mutex queueMutex;
     std::thread listenerThread;
     std::atomic<bool> isListening;
     

@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace KC_135
@@ -16,11 +17,13 @@ namespace KC_135
         private Dictionary<Sensor, Label> triangleLabels = new Dictionary<Sensor, Label>();
         private System.Windows.Forms.Timer messageUpdateTimer;
         private TestControl testControlForm;
+        private TCPClient tcpClient;
 
         public Form1()
         {
             InitializeComponent();
             InitializeForm();
+            this.FormClosing += Form1_FormClosing;
         }
 
         private void InitializeForm()
@@ -34,6 +37,7 @@ namespace KC_135
                      ControlStyles.ResizeRedraw, true);
 
             InitializeTimer();
+            InitializeTCPClient();
 
             try
             {
@@ -56,6 +60,67 @@ namespace KC_135
             messageUpdateTimer.Interval = 100;
             messageUpdateTimer.Tick += MessageUpdateTimer_Tick;
             messageUpdateTimer.Start();
+        }
+
+        private void InitializeTCPClient()
+        {
+            tcpClient = new TCPClient("127.0.0.1", 8080);
+            
+            tcpClient.MessageReceived += OnTCPMessageReceived;
+            tcpClient.Connected += OnTCPConnected;
+            tcpClient.Disconnected += OnTCPDisconnected;
+            
+            // Attempt to connect asynchronously
+            Task.Run(async () =>
+            {
+                await tcpClient.ConnectAsync();
+            });
+        }
+
+        private void OnTCPMessageReceived(string message)
+        {
+            // Process the received status message from the backend
+            if (InvokeRequired)
+            {
+                Invoke(new Action<string>(OnTCPMessageReceived), message);
+                return;
+            }
+
+            try
+            {
+                // Add the received message to a random sensor's queue for demonstration
+                if (triangles.Count > 0)
+                {
+                    Random random = new Random();
+                    Sensor randomSensor = triangles[random.Next(triangles.Count)];
+                    string formattedMessage = $"[TCP] {DateTime.Now:HH:mm:ss} Backend Status: {message.Substring(0, Math.Min(50, message.Length))}...";
+                    randomSensor.MessageQueue.Enqueue(formattedMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing TCP message: {ex.Message}");
+            }
+        }
+
+        private void OnTCPConnected()
+        {
+            Console.WriteLine("TCP Client connected to backend server");
+        }
+
+        private void OnTCPDisconnected()
+        {
+            Console.WriteLine("TCP Client disconnected from backend server");
+            
+            // Attempt to reconnect after 5 seconds
+            Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                if (!tcpClient.IsConnected)
+                {
+                    await tcpClient.ConnectAsync();
+                }
+            });
         }
 
         private void InitializeTriangles()
@@ -602,6 +667,13 @@ namespace KC_135
                 messageUpdateTimer = null;
             }
 
+            // Clean up TCP client
+            if (tcpClient != null)
+            {
+                tcpClient.Dispose();
+                tcpClient = null;
+            }
+
             // Clean up sensor console resources
             foreach (var sensor in triangles)
             {
@@ -696,6 +768,11 @@ namespace KC_135
         private void Form1_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            CleanupResources();
         }
     }
 }
