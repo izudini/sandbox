@@ -3,12 +3,19 @@
 #include <sstream>
 #include <algorithm>
 #include <cstring>
+#include <ctime>
 
 #ifdef _WIN32
     #pragma comment(lib, "ws2_32.lib")
+    #pragma comment(lib, "wsock32.lib")
 #endif
 
-TCPServer::TCPServer(int port) : port(port), serverSocket(-1), isRunning(false) {
+TCPServer::TCPServer(int port) : port(port), isRunning(false) {
+#ifdef _WIN32
+    serverSocket = INVALID_SOCKET;
+#else
+    serverSocket = -1;
+#endif
 #ifdef _WIN32
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -28,7 +35,11 @@ TCPServer::~TCPServer() {
 bool TCPServer::startServer() {
     // Create socket
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+#ifdef _WIN32
+    if (serverSocket == INVALID_SOCKET) {
+#else
     if (serverSocket < 0) {
+#endif
         std::cerr << "Failed to create socket" << std::endl;
         return false;
     }
@@ -43,8 +54,10 @@ bool TCPServer::startServer() {
         std::cerr << "Failed to set socket options" << std::endl;
 #ifdef _WIN32
         closesocket(serverSocket);
+        serverSocket = INVALID_SOCKET;
 #else
         close(serverSocket);
+        serverSocket = -1;
 #endif
         return false;
     }
@@ -60,8 +73,10 @@ bool TCPServer::startServer() {
         std::cerr << "Failed to bind socket to port " << port << std::endl;
 #ifdef _WIN32
         closesocket(serverSocket);
+        serverSocket = INVALID_SOCKET;
 #else
         close(serverSocket);
+        serverSocket = -1;
 #endif
         return false;
     }
@@ -71,8 +86,10 @@ bool TCPServer::startServer() {
         std::cerr << "Failed to listen on socket" << std::endl;
 #ifdef _WIN32
         closesocket(serverSocket);
+        serverSocket = INVALID_SOCKET;
 #else
         close(serverSocket);
+        serverSocket = -1;
 #endif
         return false;
     }
@@ -95,25 +112,30 @@ void TCPServer::stopServer() {
     isRunning = false;
 
     // Close server socket
-    if (serverSocket >= 0) {
 #ifdef _WIN32
+    if (serverSocket != INVALID_SOCKET) {
         closesocket(serverSocket);
+        serverSocket = INVALID_SOCKET;
+    }
 #else
+    if (serverSocket >= 0) {
         close(serverSocket);
-#endif
         serverSocket = -1;
     }
+#endif
 
     // Close all client sockets
     {
         std::lock_guard<std::mutex> lock(clientsMutex);
-        for (int clientSocket : clientSockets) {
 #ifdef _WIN32
+        for (SOCKET clientSocket : clientSockets) {
             closesocket(clientSocket);
-#else
-            close(clientSocket);
-#endif
         }
+#else
+        for (int clientSocket : clientSockets) {
+            close(clientSocket);
+        }
+#endif
         clientSockets.clear();
     }
 
@@ -131,10 +153,19 @@ void TCPServer::stopServer() {
 void TCPServer::acceptClients() {
     while (isRunning) {
         struct sockaddr_in clientAddr;
+#ifdef _WIN32
+        int clientAddrLen = sizeof(clientAddr);
+#else
         socklen_t clientAddrLen = sizeof(clientAddr);
+#endif
         
+#ifdef _WIN32
+        SOCKET clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientAddrLen);
+        if (clientSocket == INVALID_SOCKET) {
+#else
         int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientAddrLen);
         if (clientSocket < 0) {
+#endif
             if (isRunning) {
                 std::cerr << "Failed to accept client connection" << std::endl;
             }
@@ -158,10 +189,17 @@ void TCPServer::sendStatusMessages() {
         
         {
             std::lock_guard<std::mutex> lock(clientsMutex);
+#ifdef _WIN32
+            std::vector<SOCKET> disconnectedClients;
+            
+            for (SOCKET clientSocket : clientSockets) {
+                int result = send(clientSocket, statusMessage.c_str(), (int)statusMessage.length(), 0);
+#else
             std::vector<int> disconnectedClients;
             
             for (int clientSocket : clientSockets) {
                 int result = send(clientSocket, statusMessage.c_str(), statusMessage.length(), 0);
+#endif
                 if (result < 0) {
                     std::cout << "Client disconnected" << std::endl;
                     disconnectedClients.push_back(clientSocket);
@@ -169,7 +207,11 @@ void TCPServer::sendStatusMessages() {
             }
             
             // Remove disconnected clients
+#ifdef _WIN32
+            for (SOCKET disconnectedSocket : disconnectedClients) {
+#else
             for (int disconnectedSocket : disconnectedClients) {
+#endif
                 removeDisconnectedClient(disconnectedSocket);
             }
         }
@@ -179,7 +221,11 @@ void TCPServer::sendStatusMessages() {
     }
 }
 
+#ifdef _WIN32
+void TCPServer::removeDisconnectedClient(SOCKET clientSocket) {
+#else
 void TCPServer::removeDisconnectedClient(int clientSocket) {
+#endif
     auto it = std::find(clientSockets.begin(), clientSockets.end(), clientSocket);
     if (it != clientSockets.end()) {
         clientSockets.erase(it);
@@ -196,16 +242,20 @@ std::string TCPServer::generateStatusMessage() const {
     auto now = std::chrono::system_clock::now();
     auto time_t = std::chrono::system_clock::to_time_t(now);
     
-    oss << "{";
-    oss << "\"timestamp\":\"" << std::ctime(&time_t);
+    char time_buf[32];
+#ifdef _WIN32
+    ctime_s(time_buf, sizeof(time_buf), &time_t);
+    std::string timestamp(time_buf);
+#else
+    std::string timestamp(std::ctime(&time_t));
+#endif
     // Remove newline from ctime
-    std::string timestamp = oss.str();
     if (!timestamp.empty() && timestamp.back() == '\n') {
         timestamp.pop_back();
     }
-    oss.str("");
+    
     oss << "{";
-    oss << "\"timestamp\":\"" << timestamp.substr(timestamp.find(':') + 1) << "\",";
+    oss << "\"timestamp\":\"" << timestamp << "\",";
     oss << "\"server_status\":\"running\",";
     oss << "\"connected_clients\":" << getClientCount() << ",";
     oss << "\"sensors\":[";

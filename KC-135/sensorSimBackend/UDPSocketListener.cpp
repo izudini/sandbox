@@ -4,10 +4,16 @@
 
 #ifdef _WIN32
     #pragma comment(lib, "ws2_32.lib")
+    #pragma comment(lib, "wsock32.lib")
 #endif
 
 UDPSocketListener::UDPSocketListener(int port) 
-    : socketFd(-1), port(port), isListening(false) {
+    : port(port), isListening(false) {
+#ifdef _WIN32
+    socketFd = INVALID_SOCKET;
+#else
+    socketFd = -1;
+#endif
 #ifdef _WIN32
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -23,7 +29,11 @@ UDPSocketListener::~UDPSocketListener() {
 
 bool UDPSocketListener::openSocket() {
     socketFd = socket(AF_INET, SOCK_DGRAM, 0);
+#ifdef _WIN32
+    if (socketFd == INVALID_SOCKET) {
+#else
     if (socketFd < 0) {
+#endif
         std::cerr << "Failed to create socket" << std::endl;
         return false;
     }
@@ -38,10 +48,11 @@ bool UDPSocketListener::openSocket() {
         std::cerr << "Failed to bind socket to port " << port << std::endl;
 #ifdef _WIN32
         closesocket(socketFd);
+        socketFd = INVALID_SOCKET;
 #else
         close(socketFd);
-#endif
         socketFd = -1;
+#endif
         return false;
     }
 
@@ -61,24 +72,36 @@ void UDPSocketListener::closeSocket() {
         }
     }
     
-    if (socketFd >= 0) {
 #ifdef _WIN32
+    if (socketFd != INVALID_SOCKET) {
         closesocket(socketFd);
+        socketFd = INVALID_SOCKET;
+    }
 #else
+    if (socketFd >= 0) {
         close(socketFd);
-#endif
         socketFd = -1;
     }
+#endif
 }
 
 void UDPSocketListener::listenForMessages() {
     char buffer[1024];
     struct sockaddr_in clientAddr;
+#ifdef _WIN32
+    int clientAddrLen = sizeof(clientAddr);
+#else
     socklen_t clientAddrLen = sizeof(clientAddr);
+#endif
 
     while (isListening) {
+#ifdef _WIN32
+        int bytesReceived = recvfrom(socketFd, buffer, sizeof(buffer) - 1, 0, 
+                                    (struct sockaddr*)&clientAddr, &clientAddrLen);
+#else
         ssize_t bytesReceived = recvfrom(socketFd, buffer, sizeof(buffer) - 1, 0, 
                                         (struct sockaddr*)&clientAddr, &clientAddrLen);
+#endif
         
         if (bytesReceived > 0) {
             buffer[bytesReceived] = '\0';
