@@ -88,6 +88,9 @@ namespace KC_135
 
             try
             {
+                // Trigger LED blinking on message received
+                activityLED.TriggerActivity();
+                
                 // Add the received message to a random sensor's queue for demonstration
                 if (triangles.Count > 0)
                 {
@@ -103,14 +106,17 @@ namespace KC_135
             }
         }
 
+
         private void OnTCPConnected()
         {
             Console.WriteLine("TCP Client connected to backend server");
+            activityLED.TriggerActivity();
         }
 
         private void OnTCPDisconnected()
         {
             Console.WriteLine("TCP Client disconnected from backend server");
+            activityLED.TriggerActivity();
             
             // Attempt to reconnect after 5 seconds
             Task.Run(async () =>

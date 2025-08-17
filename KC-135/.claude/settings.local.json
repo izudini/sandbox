@@ -4,6 +4,9 @@
       "Bash(dotnet build)",
       "Bash(find:*)"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "/usr/bin"
+    ]
   }
 }
