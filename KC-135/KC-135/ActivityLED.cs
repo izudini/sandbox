@@ -18,6 +18,7 @@ namespace KC_135
         public Color ActiveColor { get; set; } = Color.Red;
         public Color InactiveColor { get; set; } = Color.Gray;
         public int BlinkTimeoutSeconds { get; set; } = 2;
+        public string LabelText { get; set; } = string.Empty;
 
         public ActivityLED()
         {
@@ -25,12 +26,26 @@ namespace KC_135
             InitializeLED();
         }
 
+        public ActivityLED(Color activeColor, string labelText = "")
+        {
+            InitializeComponent();
+            ActiveColor = activeColor;
+            LabelText = labelText;
+            InitializeLED();
+        }
+
         private void InitializeLED()
         {
-            // Set default appearance
-            this.Size = new Size(20, 20);
-            this.BackColor = InactiveColor;
-            this.BorderStyle = BorderStyle.FixedSingle;
+            // Set default appearance - adjust size to accommodate label
+            this.Size = string.IsNullOrEmpty(LabelText) ? new Size(20, 20) : new Size(80, 20);
+            this.BackColor = Color.Transparent;
+            this.BorderStyle = BorderStyle.None;
+            
+            // Enable double buffering for smooth rendering
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint | 
+                         ControlStyles.UserPaint | 
+                         ControlStyles.DoubleBuffer | 
+                         ControlStyles.ResizeRedraw, true);
             
             // Initialize LED timer
             ledTimer = new System.Windows.Forms.Timer();
@@ -87,7 +102,57 @@ namespace KC_135
                 return;
             }
             
-            this.BackColor = ledState ? ActiveColor : InactiveColor;
+            this.Invalidate();
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            
+            Graphics g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            
+            // Calculate LED circle bounds
+            int ledSize = Math.Min(this.Height - 4, 16); // Max 16px LED size
+            int padding = 2;
+            Rectangle ledBounds = new Rectangle(padding, 
+                                              (this.Height - ledSize) / 2, 
+                                              ledSize, ledSize);
+            
+            // Draw the LED circle
+            Color fillColor = ledState ? ActiveColor : InactiveColor;
+            using (SolidBrush brush = new SolidBrush(fillColor))
+            {
+                g.FillEllipse(brush, ledBounds);
+            }
+            
+            // Draw LED border
+            using (Pen pen = new Pen(Color.Black, 1))
+            {
+                g.DrawEllipse(pen, ledBounds);
+            }
+            
+            // Draw label if provided
+            if (!string.IsNullOrEmpty(LabelText))
+            {
+                Rectangle textBounds = new Rectangle(
+                    ledBounds.Right + 5, 
+                    0, 
+                    this.Width - ledBounds.Right - 5, 
+                    this.Height);
+                
+                using (SolidBrush textBrush = new SolidBrush(this.ForeColor))
+                {
+                    StringFormat format = new StringFormat
+                    {
+                        Alignment = StringAlignment.Near,
+                        LineAlignment = StringAlignment.Center
+                    };
+                    
+                    g.DrawString(LabelText, this.Font, textBrush, textBounds, format);
+                }
+            }
         }
         
         protected override void Dispose(bool disposing)
