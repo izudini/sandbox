@@ -52,6 +52,7 @@ namespace KC_135
 
             InitializeTriangles();
             InitializeBackgroundImage();
+            UpdateControllerStatus();
         }
 
         private void InitializeTimer()
@@ -779,6 +780,88 @@ namespace KC_135
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             CleanupResources();
+        }
+
+        private void StartButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                bool success = SensorControllerInterface.StartSensorController();
+                if (success)
+                {
+                    statusLabel.Text = "Running";
+                    statusLabel.ForeColor = Color.Green;
+                    startButton.Enabled = false;
+                    stopButton.Enabled = true;
+                    activityLED.TriggerActivity();
+                }
+                else
+                {
+                    MessageBox.Show("Failed to start sensor controller. It may already be running.", 
+                        "Start Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error starting sensor controller: {ex.Message}", 
+                    "Start Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void StopButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                bool success = SensorControllerInterface.StopSensorController();
+                if (success)
+                {
+                    statusLabel.Text = "Stopped";
+                    statusLabel.ForeColor = Color.Black;
+                    startButton.Enabled = true;
+                    stopButton.Enabled = false;
+                    activityLED.TriggerActivity();
+                }
+                else
+                {
+                    MessageBox.Show("Failed to stop sensor controller. It may not be running.", 
+                        "Stop Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error stopping sensor controller: {ex.Message}", 
+                    "Stop Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void UpdateControllerStatus()
+        {
+            try
+            {
+                bool isRunning = SensorControllerInterface.IsRunning();
+                if (isRunning)
+                {
+                    statusLabel.Text = "Running";
+                    statusLabel.ForeColor = Color.Green;
+                    startButton.Enabled = false;
+                    stopButton.Enabled = true;
+                }
+                else
+                {
+                    statusLabel.Text = "Stopped";
+                    statusLabel.ForeColor = Color.Black;
+                    startButton.Enabled = true;
+                    stopButton.Enabled = false;
+                }
+            }
+            catch
+            {
+                // DLL not available, disable buttons
+                statusLabel.Text = "DLL Not Found";
+                statusLabel.ForeColor = Color.Red;
+                startButton.Enabled = false;
+                stopButton.Enabled = false;
+            }
         }
     }
 }
