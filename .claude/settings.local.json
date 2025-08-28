@@ -3,7 +3,8 @@
     "allow": [
       "Bash(dotnet build)",
       "Bash(g++:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(/mnt/c/Windows/System32/cmd.exe /c \"cl.exe\")"
     ],
     "deny": [],
     "ask": []

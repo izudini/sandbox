@@ -11,6 +11,9 @@ namespace KC_135
         private System.Windows.Forms.Panel detailsPanel;
         // private System.Windows.Forms.CheckBox checkBoxSelection;
         private ActivityLED activityLED;
+        private System.Windows.Forms.Button startButton;
+        private System.Windows.Forms.Button stopButton;
+        private System.Windows.Forms.Label statusLabel;
 
         protected override void Dispose(bool disposing)
         {
@@ -27,6 +30,9 @@ namespace KC_135
             planePanel = new Panel();
             detailsPanel = new Panel();
             activityLED = new ActivityLED();
+            startButton = new Button();
+            stopButton = new Button();
+            statusLabel = new Label();
             SuspendLayout();
             // 
             // planePanel
@@ -60,11 +66,50 @@ namespace KC_135
             activityLED.Size = new Size(20, 20);
             activityLED.TabIndex = 2;
             // 
+            // startButton
+            // 
+            startButton.BackColor = Color.Green;
+            startButton.ForeColor = Color.White;
+            startButton.Font = new Font("Arial", 9, FontStyle.Bold);
+            startButton.Location = new Point(50, 12);
+            startButton.Name = "startButton";
+            startButton.Size = new Size(75, 25);
+            startButton.TabIndex = 3;
+            startButton.Text = "Start";
+            startButton.UseVisualStyleBackColor = false;
+            startButton.Click += StartButton_Click;
+            // 
+            // stopButton
+            // 
+            stopButton.BackColor = Color.Red;
+            stopButton.ForeColor = Color.White;
+            stopButton.Font = new Font("Arial", 9, FontStyle.Bold);
+            stopButton.Location = new Point(135, 12);
+            stopButton.Name = "stopButton";
+            stopButton.Size = new Size(75, 25);
+            stopButton.TabIndex = 4;
+            stopButton.Text = "Stop";
+            stopButton.UseVisualStyleBackColor = false;
+            stopButton.Click += StopButton_Click;
+            // 
+            // statusLabel
+            // 
+            statusLabel.AutoSize = true;
+            statusLabel.Font = new Font("Arial", 9, FontStyle.Bold);
+            statusLabel.Location = new Point(220, 17);
+            statusLabel.Name = "statusLabel";
+            statusLabel.Size = new Size(52, 15);
+            statusLabel.TabIndex = 5;
+            statusLabel.Text = "Stopped";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(700, 461);
+            Controls.Add(statusLabel);
+            Controls.Add(stopButton);
+            Controls.Add(startButton);
             Controls.Add(activityLED);
             Controls.Add(detailsPanel);
             Controls.Add(planePanel);
@@ -72,6 +117,7 @@ namespace KC_135
             Text = "KC-135 Sensor Simulator";
             Load += Form1_Load;
             ResumeLayout(false);
+            PerformLayout();
         }
     }
 }
