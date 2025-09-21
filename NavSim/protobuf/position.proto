@@ -14,8 +14,8 @@ message Position {
   double longitude = 3;
   
   // Altitude in meters above sea level
-  double altitude = 4;
+  double altitude = 1000;
   
   // Heading in degrees (0-360, where 0 is North)
-  double heading = 5;
+  double heading = 0;
 }
