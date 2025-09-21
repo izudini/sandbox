@@ -11,7 +11,9 @@
       "Bash(pip3 install:*)",
       "Bash(timeout 3 python3:*)",
       "Bash(timeout:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Read(//mnt/c/Users/izudin/Desktop/Projects/sandbox/**)",
+      "Read(//tmp/**)"
     ],
     "deny": [],
     "ask": []
