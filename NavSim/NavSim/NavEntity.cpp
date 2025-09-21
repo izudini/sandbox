@@ -1,8 +1,11 @@
 #include "NavEntity.h"
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
+#include <string>
+#include <iostream>
 
-NavEntity::NavEntity() : m_isInitialized(false), currentPosition(), m_destination(), m_speed_mph(0), simulationRate_Hz(60), m_isSimulating(false)
+NavEntity::NavEntity() : m_isInitialized(false), currentPosition(), m_destination(), m_speed_mph(0), simulationRate_Hz(60), m_isSimulating(false), m_useVisualizer(false)
 {
 }
 
@@ -61,7 +64,14 @@ void NavEntity::simulateFlight(const Position& start, const Position& destinatio
     m_speed_mph = speed_mph;
     m_isSimulating = true;
     
-    m_simulationThread = std::thread(&NavEntity::simulatingFlight, this);
+    if (m_useVisualizer)
+    {
+        m_simulationThread = std::thread(&NavEntity::simulatingFlightWithVisualizer, this);
+    }
+    else
+    {
+        m_simulationThread = std::thread(&NavEntity::simulatingFlight, this);
+    }
 }
 
 void NavEntity::simulatingFlight()
@@ -116,5 +126,86 @@ void NavEntity::stopFlight()
         {
             m_simulationThread.join();
         }
+    }
+}
+
+void NavEntity::simulatingFlightWithVisualizer()
+{
+    while (m_isSimulating.load())
+    {
+        double deltaTime = 1.0 / simulationRate_Hz;
+        
+        double latDiff = m_destination.GetLatitude() - currentPosition.GetLatitude();
+        double lonDiff = m_destination.GetLongitude() - currentPosition.GetLongitude();
+        double altDiff = m_destination.GetAltitude() - currentPosition.GetAltitude();
+        
+        double distance = std::sqrt(latDiff * latDiff + lonDiff * lonDiff);
+        
+        if (distance < 0.0001)
+        {
+            currentPosition = m_destination;
+            m_isSimulating = false;
+            break;
+        }
+        
+        double speed_deg_per_sec = (m_speed_mph / 3600.0) / 69.0;
+        double moveDistance = speed_deg_per_sec * deltaTime;
+        
+        if (moveDistance >= distance)
+        {
+            currentPosition = m_destination;
+            m_isSimulating = false;
+            break;
+        }
+        
+        double ratio = moveDistance / distance;
+        
+        double newLat = currentPosition.GetLatitude() + (latDiff * ratio);
+        double newLon = currentPosition.GetLongitude() + (lonDiff * ratio);
+        double newAlt = currentPosition.GetAltitude() + (altDiff * ratio);
+        
+        currentPosition.SetLatitude(newLat);
+        currentPosition.SetLongitude(newLon);
+        currentPosition.SetAltitude(newAlt);
+        
+        // Update Python visualizer with current position
+        if (m_visualizer && m_isSimulating.load())
+        {
+            m_visualizer->UpdatePosition(currentPosition);
+            m_visualizer->Visualize();
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000 / simulationRate_Hz));
+    }
+}
+
+void NavEntity::Start()
+{
+    std::string command = "python ../NavVisualiser/main.py";
+    std::system(command.c_str());
+}
+
+void NavEntity::StartWithVisualizer()
+{
+    try
+    {
+        m_visualizer = std::make_unique<PythonVisualizer>();
+        if (m_visualizer->Initialize())
+        {
+            m_useVisualizer = true;
+            std::cout << "NavEntity configured to use Python visualizer" << std::endl;
+        }
+        else
+        {
+            std::cerr << "Failed to initialize Python visualizer" << std::endl;
+            m_visualizer.reset();
+            m_useVisualizer = false;
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Exception during visualizer setup: " << e.what() << std::endl;
+        m_visualizer.reset();
+        m_useVisualizer = false;
     }
 }

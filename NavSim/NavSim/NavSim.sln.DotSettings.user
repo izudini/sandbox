@@ -1,0 +1,4 @@
+&lt;wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation"&gt;
+	&lt;s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue"&gt;&amp;lt;AssemblyExplorer&amp;gt;&#xD;
+  &amp;lt;Assembly Path="C:\Windows\Microsoft.NET\Framework64\v4.0.30319\mscorlib.dll" /&amp;gt;&#xD;
+&amp;lt;/AssemblyExplorer&amp;gt;&lt;/s:String&gt;&lt;/wpf:ResourceDictionary&gt;

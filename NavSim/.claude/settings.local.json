@@ -5,7 +5,8 @@
       "Bash(python3 -m pip:*)",
       "Bash(sudo apt:*)",
       "Bash(sudo apt install:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(msbuild:*)"
     ],
     "deny": [],
     "ask": []
