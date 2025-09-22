@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package navsim;
+
+// Position message representing latitude, longitude, altitude, heading, and entity ID
+message Position {
+  // Unique identifier for the entity
+  int32 entity_id = 1;
+  
+  // Latitude in decimal degrees (-90 to 90)
+  double latitude = 2;
+  
+  // Longitude in decimal degrees (-180 to 180)
+  double longitude = 3;
+  
+  // Altitude in meters above sea level
+  double altitude = 1000;
+  
+  // Heading in degrees (0-360, where 0 is North)
+  double heading = 0;
+}

@@ -13,7 +13,15 @@
       "Bash(timeout:*)",
       "Bash(chmod:*)",
       "Read(//mnt/c/Users/izudin/Desktop/Projects/sandbox/**)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(protoc:*)",
+      "Bash(make:*)",
+      "Bash(g++:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Read(/usr/**)",
+      "Read(/usr/include/**)",
+      "Bash(apt list:*)"
     ],
     "deny": [],
     "ask": []
