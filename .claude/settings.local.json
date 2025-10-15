@@ -5,7 +5,8 @@
       "Bash(g++:*)",
       "Bash(timeout:*)",
       "Bash(/mnt/c/Windows/System32/cmd.exe /c \"cl.exe\")",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(dotnet new:*)"
     ],
     "deny": [],
     "ask": []
