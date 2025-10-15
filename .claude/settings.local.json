@@ -4,7 +4,8 @@
       "Bash(dotnet build)",
       "Bash(g++:*)",
       "Bash(timeout:*)",
-      "Bash(/mnt/c/Windows/System32/cmd.exe /c \"cl.exe\")"
+      "Bash(/mnt/c/Windows/System32/cmd.exe /c \"cl.exe\")",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []
