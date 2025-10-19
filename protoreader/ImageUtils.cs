@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Diagnostics;
 
 namespace protoReader
 {
@@ -44,6 +45,87 @@ namespace protoReader
             }
 
             return bitmap;
+        }
+
+        public static void MakeVid(string folderPath)
+        {
+            if (string.IsNullOrEmpty(folderPath))
+                throw new ArgumentException("Folder path cannot be null or empty", nameof(folderPath));
+
+            if (!Directory.Exists(folderPath))
+                throw new DirectoryNotFoundException($"Folder not found: {folderPath}");
+
+            // Get all BMP files sorted alphabetically
+            string[] bmpFiles = Directory.GetFiles(folderPath, "*.bmp")
+                                        .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+                                        .ToArray();
+
+            if (bmpFiles.Length == 0)
+                throw new InvalidOperationException("No BMP files found in the specified folder");
+
+            string outputPath = Path.Combine(folderPath, "output.mpg");
+            string tempListFile = Path.Combine(folderPath, "filelist.txt");
+
+            try
+            {
+                // Create a file list for FFmpeg
+                using (StreamWriter writer = new StreamWriter(tempListFile))
+                {
+                    foreach (string bmpFile in bmpFiles)
+                    {
+                        writer.WriteLine($"file '{Path.GetFileName(bmpFile)}'");
+                    }
+                }
+
+                // Use FFmpeg to create video from images
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = "ffmpeg",
+                    Arguments = $"-f concat -safe 0 -i \"{tempListFile}\" -r 30 -c:v mpeg1video -q:v 2 \"{outputPath}\"",
+                    WorkingDirectory = folderPath,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using (Process process = Process.Start(startInfo))
+                {
+                    if (process == null)
+                        throw new InvalidOperationException("Failed to start FFmpeg process");
+
+                    string output = process.StandardOutput.ReadToEnd();
+                    string error = process.StandardError.ReadToEnd();
+
+                    process.WaitForExit();
+
+                    if (process.ExitCode != 0)
+                    {
+                        throw new InvalidOperationException($"FFmpeg failed with exit code {process.ExitCode}. Error: {error}");
+                    }
+                }
+
+                Console.WriteLine($"Video created successfully: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to create video: {ex.Message}", ex);
+            }
+            finally
+            {
+                // Clean up temporary file
+                if (File.Exists(tempListFile))
+                {
+                    try
+                    {
+                        File.Delete(tempListFile);
+                    }
+                    catch
+                    {
+                        // Ignore cleanup errors
+                    }
+                }
+            }
         }
     }
 }
