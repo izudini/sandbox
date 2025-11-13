@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+// Enumeration defining available commands
+enum Command {
+    START = 0;
+    STOP = 1;
+    SHUTDOWN = 2;
+}
+
+// Message containing a command
+message CommandMessage {
+    Command command = 1;
+}
